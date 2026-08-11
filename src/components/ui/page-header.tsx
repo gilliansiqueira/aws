@@ -50,7 +50,7 @@ export function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-16 text-center">
       <p className="font-medium text-foreground">{title}</p>
-      {description && <p className="text-sm text-muted</p>}
+      {description && <p className="text-sm text-muted">{description}</p>}
       {action}
     </div>
   );
