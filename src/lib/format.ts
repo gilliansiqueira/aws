@@ -16,6 +16,13 @@ export function formatNumberBR(value: number | string, decimals = 2): string {
   }).format(n);
 }
 
+// Usado no espelho: números inteiros aparecem sem casas decimais
+// (ex: peso total 1000), fracionários com até 3 casas.
+export function formatQtyBR(value: number | string): string {
+  const n = typeof value === "string" ? Number(value) : value;
+  return Number.isInteger(n) ? formatNumberBR(n, 0) : formatNumberBR(n, 3);
+}
+
 export function formatDateBR(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   return new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).format(d);

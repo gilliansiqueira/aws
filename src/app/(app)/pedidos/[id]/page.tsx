@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Copy } from "lucide-react";
+import { Copy, FileText } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Card } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
@@ -34,6 +34,9 @@ export default async function DetalhePedidoPage({
         description={`Criado em ${formatDateTimeBR(pedido.createdAt)}`}
         actions={
           <>
+            <ButtonLink href={`/pedidos/${pedido.id}/espelho`} variant="secondary">
+              <FileText size={16} /> Ver Espelho
+            </ButtonLink>
             <ButtonLink href={`/pedidos/novo?duplicar=${pedido.id}`} variant="secondary">
               <Copy size={16} /> Duplicar
             </ButtonLink>

@@ -162,7 +162,7 @@ export function PedidoWizard({
     }
 
     const pedido = await res.json();
-    router.push(`/pedidos/${pedido.id}`);
+    router.push(`/pedidos/${pedido.id}/espelho`);
   }
 
   return (

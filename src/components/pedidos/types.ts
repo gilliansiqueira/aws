@@ -60,6 +60,18 @@ export type WizardCatalogs = {
   produtos: ProdutoOption[];
 };
 
+export type EmpresaSnapshot = {
+  nome: string;
+  razaoSocial: string;
+  cnpj: string;
+  endereco: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  cep: string;
+  telefone: string;
+};
+
 export type WizardInitialData = {
   clienteId: string;
   industriaId: string;
