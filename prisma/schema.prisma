@@ -1,0 +1,352 @@
+// Schema do banco de dados do sistema de gestão comercial AWS
+// Regra crítica: pedidos gravam SNAPSHOT dos dados de produto/cliente/indústria/empresa
+// no momento da criação. Alterações posteriores no cadastro NÃO alteram pedidos já criados.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Autenticação / usuários
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  VENDEDOR
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(VENDEDOR)
+  ativo        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pedidosCriados Pedido[]  @relation("PedidoCriadoPor")
+  amostrasCriadas Amostra[] @relation("AmostraCriadaPor")
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// Dados da empresa AWS (singleton, usado no cabeçalho do espelho)
+// ---------------------------------------------------------------------------
+
+model EmpresaConfig {
+  id           String   @id @default(cuid())
+  nome         String
+  razaoSocial  String
+  cnpj         String
+  endereco     String
+  bairro       String
+  cidade       String
+  uf           String
+  cep          String
+  telefone     String
+  updatedAt    DateTime @updatedAt
+
+  @@map("empresa_config")
+}
+
+// ---------------------------------------------------------------------------
+// Cadastros básicos
+// ---------------------------------------------------------------------------
+
+model Marca {
+  id        String   @id @default(cuid())
+  nome      String   @unique
+  cor       String // hex, ex: #2563EB — usado em gráficos e no mapa
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  produtos  Produto[]
+  amostras  Amostra[]
+
+  @@map("marcas")
+}
+
+model Industria {
+  id                     String   @id @default(cuid())
+  nome                   String
+  cnpj                   String?
+  contatoNome            String?
+  contatoTelefone        String?
+  whatsapp               String // obrigatório: número usado no envio do espelho via wa.me
+  transportadoraPadraoId String?
+  transportadoraPadrao   Transportadora? @relation(fields: [transportadoraPadraoId], references: [id])
+  mensagemPadraoEnvio    String? // template com placeholders {cliente} e {pedido}; se nulo, usa o padrão geral do sistema
+  ativo                  Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  produtos Produto[]
+  pedidos  Pedido[]
+  amostras Amostra[]
+
+  @@map("industrias")
+}
+
+model Transportadora {
+  id        String   @id @default(cuid())
+  nome      String
+  telefone  String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  industriasPadrao Industria[]
+  pedidos          Pedido[]
+
+  @@map("transportadoras")
+}
+
+model FormaPagamento {
+  id             String   @id @default(cuid())
+  nome           String // ex: "BOLETO BANCARIO", "A VISTA"
+  numeroParcelas Int      @default(1)
+  intervaloDias  Int      @default(30) // intervalo entre parcelas
+  primeiraParcelaDias Int @default(30) // prazo da 1a parcela a partir da data do pedido
+  ativo          Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  clientesPadrao Cliente[]
+  pedidos        Pedido[]
+
+  @@map("formas_pagamento")
+}
+
+model Cliente {
+  id                     String   @id @default(cuid())
+  nome                   String
+  cnpj                   String?
+  endereco               String?
+  bairro                 String?
+  cidade                 String?
+  uf                     String?
+  cep                     String?
+  contatoNome            String?
+  telefone               String?
+  whatsapp               String?
+  latitude               Float?
+  longitude              Float?
+  formaPagamentoPadraoId String?
+  formaPagamentoPadrao   FormaPagamento? @relation(fields: [formaPagamentoPadraoId], references: [id])
+  compradorPadrao        String? // nome que costuma assinar/comprar
+  ativo                  Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  pedidos  Pedido[]
+  amostras Amostra[]
+
+  @@map("clientes")
+}
+
+model Produto {
+  id            String   @id @default(cuid())
+  nome          String
+  codigo        String   @unique
+  referencia    String?
+  marcaId       String
+  marca         Marca    @relation(fields: [marcaId], references: [id])
+  industriaId   String
+  industria     Industria @relation(fields: [industriaId], references: [id])
+  unidade       String   @default("UN")
+  pesoLiquido   Decimal  @db.Decimal(12, 3) // peso líquido unitário (kg)
+  preco         Decimal  @db.Decimal(12, 2)
+  ativo         Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  itensPedido ItemPedido[]
+  amostras    Amostra[]
+
+  @@index([marcaId])
+  @@index([industriaId])
+  @@map("produtos")
+}
+
+// ---------------------------------------------------------------------------
+// Pedidos
+// ---------------------------------------------------------------------------
+
+enum StatusPedido {
+  RASCUNHO
+  REALIZADO
+  ENVIADO_INDUSTRIA
+  EM_ANDAMENTO
+  ENTREGUE
+  CANCELADO
+}
+
+// Contador para geração do número sequencial do pedido (evita corrida de forma segura em transação)
+model PedidoCounter {
+  id     Int @id @default(1)
+  ultimo Int @default(1000)
+
+  @@map("pedido_counter")
+}
+
+model Pedido {
+  id     String @id @default(cuid())
+  numero Int    @unique
+
+  status         StatusPedido @default(RASCUNHO)
+  dataPedido     DateTime     @default(now())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  // snapshot do cliente no momento do pedido (para o espelho nunca mudar)
+  clienteNomeSnapshot     String
+  clienteCnpjSnapshot     String?
+  clienteEnderecoSnapshot String?
+  clienteCidadeSnapshot   String?
+  clienteUfSnapshot       String?
+
+  industriaId String
+  industria   Industria @relation(fields: [industriaId], references: [id])
+  // snapshot da indústria (nome e whatsapp usados no envio, mesmo que o cadastro mude depois)
+  industriaNomeSnapshot     String
+  industriaWhatsappSnapshot String
+
+  transportadoraId   String?
+  transportadora     Transportadora? @relation(fields: [transportadoraId], references: [id])
+  transportadoraNomeSnapshot String?
+
+  compradorNome String
+
+  formaPagamentoId   String?
+  formaPagamento     FormaPagamento? @relation(fields: [formaPagamentoId], references: [id])
+  formaPagamentoNomeSnapshot String // nome da forma de pagamento no momento do pedido (ex: "BOLETO BANCARIO")
+
+  observacoes String?
+
+  // snapshot do cabeçalho da empresa AWS no momento da emissão do espelho
+  empresaSnapshot Json
+
+  pesoTotal   Decimal @db.Decimal(14, 3) @default(0)
+  quantidadeTotal Decimal @db.Decimal(14, 3) @default(0)
+  valorTotal  Decimal @db.Decimal(14, 2) @default(0)
+
+  enviadoWhatsappEm DateTime?
+
+  pedidoOrigemId String? // referência ao pedido do qual este foi duplicado, se aplicável
+  pedidoOrigem   Pedido? @relation("PedidoDuplicado", fields: [pedidoOrigemId], references: [id])
+  duplicados     Pedido[] @relation("PedidoDuplicado")
+
+  criadoPorId String?
+  criadoPor   User?   @relation("PedidoCriadoPor", fields: [criadoPorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  itens    ItemPedido[]
+  parcelas Parcela[]
+  amostras Amostra[]
+
+  @@index([clienteId])
+  @@index([industriaId])
+  @@index([status])
+  @@index([dataPedido])
+  @@map("pedidos")
+}
+
+model ItemPedido {
+  id       String @id @default(cuid())
+  pedidoId String
+  pedido   Pedido @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  ordem    Int    @default(0)
+
+  produtoId String?
+  produto   Produto? @relation(fields: [produtoId], references: [id])
+
+  // snapshot do produto no momento do pedido
+  codigoSnapshot        String
+  referenciaSnapshot    String?
+  descricaoSnapshot      String
+  marcaNomeSnapshot      String
+  pesoLiquidoUnitSnapshot Decimal @db.Decimal(12, 3)
+  valorUnitarioSnapshot   Decimal @db.Decimal(12, 2)
+
+  quantidade Decimal @db.Decimal(12, 3)
+
+  // calculados e persistidos no momento da criação (não recalculam se o cadastro mudar)
+  pesoTotal  Decimal @db.Decimal(14, 3)
+  valorTotal Decimal @db.Decimal(14, 2)
+
+  @@index([pedidoId])
+  @@map("itens_pedido")
+}
+
+model Parcela {
+  id            String   @id @default(cuid())
+  pedidoId      String
+  pedido        Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  numero        Int
+  totalParcelas Int
+  vencimento    DateTime
+  valor         Decimal  @db.Decimal(12, 2)
+
+  @@index([pedidoId])
+  @@map("parcelas")
+}
+
+// ---------------------------------------------------------------------------
+// Amostras
+// ---------------------------------------------------------------------------
+
+enum StatusAmostra {
+  DISPONIBILIZADA
+  AGUARDANDO_RETORNO
+  RETORNO_RECEBIDO
+  CONVERTEU_VENDA
+  NAO_CONVERTEU
+  SEM_RETORNO
+}
+
+model Amostra {
+  id String @id @default(cuid())
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  produtoId String
+  produto   Produto @relation(fields: [produtoId], references: [id])
+  produtoNomeSnapshot String
+
+  marcaId String
+  marca   Marca  @relation(fields: [marcaId], references: [id])
+
+  industriaId String
+  industria   Industria @relation(fields: [industriaId], references: [id])
+
+  dataEnvio   DateTime      @default(now())
+  quantidade  Decimal       @db.Decimal(12, 3)
+  status      StatusAmostra @default(DISPONIBILIZADA)
+  dataRetorno DateTime?
+  observacoes String?
+
+  pedidoId          String? // vínculo posterior a uma venda
+  pedido            Pedido? @relation(fields: [pedidoId], references: [id])
+  valorVendaGerado  Decimal? @db.Decimal(14, 2)
+
+  criadoPorId String?
+  criadoPor   User?   @relation("AmostraCriadaPor", fields: [criadoPorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clienteId])
+  @@index([marcaId])
+  @@index([industriaId])
+  @@index([status])
+  @@map("amostras")
+}
