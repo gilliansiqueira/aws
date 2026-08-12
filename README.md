@@ -31,10 +31,32 @@ envio via WhatsApp, amostras, dashboard e mapa de vendas.
    npx prisma migrate dev
    npx prisma db seed
    ```
+   Por padrão o seed só cria os 2 usuários, os dados da empresa (placeholder) e as formas de
+   pagamento padrão. Para também popular marca/indústria/cliente/produto de exemplo (útil para
+   testar o sistema), rode com `SEED_DEMO_DATA=true npx prisma db seed`.
 4. Suba o servidor:
    ```bash
    npm run dev
    ```
+
+## Deploy na Vercel
+
+1. Crie um banco Postgres gratuito (ex: [Neon](https://neon.tech)) e copie a connection string.
+2. Importe este repositório na [Vercel](https://vercel.com) ("Add New" → "Project").
+3. Configure as variáveis de ambiente do projeto na Vercel:
+   ```
+   DATABASE_URL=<connection string do Neon/Postgres>
+   AUTH_SECRET=<string aleatória longa — gere com `openssl rand -base64 32`>
+   ```
+   `NEXTAUTH_URL` não é necessário (o NextAuth está configurado com `trustHost: true`, detecta a
+   URL automaticamente a partir da requisição).
+4. Clique em Deploy. O projeto já tem um script `vercel-build` (`prisma migrate deploy && prisma
+   db seed && next build`) que roda as migrações e o seed essencial automaticamente a cada deploy
+   — é seguro rodar repetidas vezes (usa `upsert`, não duplica nem sobrescreve dados existentes).
+5. Acesse a URL gerada pela Vercel e faça login com os usuários da tabela abaixo. **Troque as
+   senhas em produção assim que possível** (a troca de senha pela interface ainda não existe —
+   por enquanto, gere um novo hash com bcrypt e atualize direto no banco, ou peça para eu
+   adicionar essa tela).
 
 ## Usuários iniciais (criados pelo seed)
 
@@ -59,7 +81,7 @@ envio via WhatsApp, amostras, dashboard e mapa de vendas.
 ## Status do projeto
 
 Módulos prontos: Cadastros (Marcas, Indústrias, Transportadoras, Formas de Pagamento, Clientes,
-Produtos, Preços) e Configurações (Empresa/Usuários).
+Produtos, Preços), Configurações (Empresa/Usuários), Pedidos (wizard de 5 passos, numeração,
+duplicação) e Espelho do Pedido + envio via WhatsApp.
 
-Módulos em construção: Pedidos (wizard), Espelho do Pedido + envio WhatsApp, Amostras, Dashboard,
-Mapa de Vendas, Relatórios.
+Módulos em construção: Amostras, Dashboard, Mapa de Vendas, Relatórios.

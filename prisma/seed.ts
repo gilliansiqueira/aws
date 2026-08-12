@@ -82,68 +82,68 @@ async function main() {
     },
   });
 
-  // Transportadora exemplo
-  const transportadora = await prisma.transportadora.upsert({
-    where: { id: "seed-transp-1" },
-    update: {},
-    create: { id: "seed-transp-1", nome: "Transportadora Exemplo", telefone: "(00) 0000-0000" },
-  });
+  // Dados de exemplo (marca/indústria/cliente/produto fictícios) só são criados
+  // quando SEED_DEMO_DATA=true — em produção (Vercel) fica de fora, para o banco
+  // começar limpo, só com usuários, empresa e formas de pagamento padrão.
+  if (process.env.SEED_DEMO_DATA === "true") {
+    const transportadora = await prisma.transportadora.upsert({
+      where: { id: "seed-transp-1" },
+      update: {},
+      create: { id: "seed-transp-1", nome: "Transportadora Exemplo", telefone: "(00) 0000-0000" },
+    });
 
-  // Marca exemplo
-  const marca = await prisma.marca.upsert({
-    where: { nome: "Marca Exemplo" },
-    update: {},
-    create: { nome: "Marca Exemplo", cor: "#2563EB" },
-  });
+    const marca = await prisma.marca.upsert({
+      where: { nome: "Marca Exemplo" },
+      update: {},
+      create: { nome: "Marca Exemplo", cor: "#2563EB" },
+    });
 
-  // Indústria exemplo (com WhatsApp, obrigatório para envio)
-  const industria = await prisma.industria.upsert({
-    where: { id: "seed-industria-1" },
-    update: {},
-    create: {
-      id: "seed-industria-1",
-      nome: "Indústria Exemplo Ltda",
-      cnpj: "11.111.111/0001-11",
-      whatsapp: "5511999999999",
-      transportadoraPadraoId: transportadora.id,
-      mensagemPadraoEnvio: "Segue pedido do cliente {cliente} — Pedido #{pedido}.",
-    },
-  });
+    const industria = await prisma.industria.upsert({
+      where: { id: "seed-industria-1" },
+      update: {},
+      create: {
+        id: "seed-industria-1",
+        nome: "Indústria Exemplo Ltda",
+        cnpj: "11.111.111/0001-11",
+        whatsapp: "5511999999999",
+        transportadoraPadraoId: transportadora.id,
+        mensagemPadraoEnvio: "Segue pedido do cliente {cliente} — Pedido #{pedido}.",
+      },
+    });
 
-  // Cliente exemplo
-  await prisma.cliente.upsert({
-    where: { id: "seed-cliente-1" },
-    update: {},
-    create: {
-      id: "seed-cliente-1",
-      nome: "Cliente Exemplo Ltda",
-      cnpj: "22.222.222/0001-22",
-      cidade: "São Paulo",
-      uf: "SP",
-      cep: "01000-000",
-      whatsapp: "5511988888888",
-      latitude: -23.55052,
-      longitude: -46.633308,
-      formaPagamentoPadraoId: boleto.id,
-      compradorPadrao: "Comprador Exemplo",
-    },
-  });
+    await prisma.cliente.upsert({
+      where: { id: "seed-cliente-1" },
+      update: {},
+      create: {
+        id: "seed-cliente-1",
+        nome: "Cliente Exemplo Ltda",
+        cnpj: "22.222.222/0001-22",
+        cidade: "São Paulo",
+        uf: "SP",
+        cep: "01000-000",
+        whatsapp: "5511988888888",
+        latitude: -23.55052,
+        longitude: -46.633308,
+        formaPagamentoPadraoId: boleto.id,
+        compradorPadrao: "Comprador Exemplo",
+      },
+    });
 
-  // Produto exemplo
-  await prisma.produto.upsert({
-    where: { codigo: "PROD-001" },
-    update: {},
-    create: {
-      nome: "Produto Exemplo 5kg",
-      codigo: "PROD-001",
-      referencia: "REF-001",
-      marcaId: marca.id,
-      industriaId: industria.id,
-      unidade: "CX",
-      pesoLiquido: 5,
-      preco: 22.79,
-    },
-  });
+    await prisma.produto.upsert({
+      where: { codigo: "PROD-001" },
+      update: {},
+      create: {
+        nome: "Produto Exemplo 5kg",
+        codigo: "PROD-001",
+        referencia: "REF-001",
+        marcaId: marca.id,
+        industriaId: industria.id,
+        unidade: "CX",
+        pesoLiquido: 5,
+        preco: 22.79,
+      },
+    });
+  }
 
   console.log("Seed concluído.");
 }
