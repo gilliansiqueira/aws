@@ -168,10 +168,30 @@ model Produto {
 
   itensPedido ItemPedido[]
   amostras    Amostra[]
+  faixasPreco FaixaPreco[]
 
   @@index([marcaId])
   @@index([industriaId])
   @@map("produtos")
+}
+
+// Preço escalonado por faixa de quantidade (opcional). Quando o produto tem
+// faixas cadastradas, o wizard de pedido sugere o preço da faixa que contém
+// a quantidade informada; a quantidade é comparada na unidade de venda do
+// próprio produto (kg, caixa, unidade etc.), sem conversão. Produto.preco
+// continua sendo o valor padrão/fallback — usado quando não há faixas ou
+// quando nenhuma faixa corresponde à quantidade do pedido.
+model FaixaPreco {
+  id               String   @id @default(cuid())
+  produtoId        String
+  produto          Produto  @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  quantidadeMinima Decimal  @db.Decimal(12, 3)
+  quantidadeMaxima Decimal? @db.Decimal(12, 3) // null = sem limite superior
+  preco            Decimal  @db.Decimal(12, 2)
+  ordem            Int      @default(0)
+
+  @@index([produtoId])
+  @@map("faixas_preco")
 }
 
 // ---------------------------------------------------------------------------

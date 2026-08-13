@@ -17,7 +17,10 @@ export default async function NovoPedidoPage({
       prisma.formaPagamento.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
       prisma.produto.findMany({
         where: { ativo: true },
-        include: { marca: true },
+        include: {
+          marca: true,
+          faixasPreco: { orderBy: { quantidadeMinima: "asc" } },
+        },
         orderBy: { nome: "asc" },
       }),
       duplicarId
@@ -62,6 +65,12 @@ export default async function NovoPedidoPage({
       unidade: p.unidade,
       pesoLiquido: Number(p.pesoLiquido),
       preco: Number(p.preco),
+      faixas: p.faixasPreco.map((f) => ({
+        id: f.id,
+        quantidadeMinima: Number(f.quantidadeMinima),
+        quantidadeMaxima: f.quantidadeMaxima === null ? null : Number(f.quantidadeMaxima),
+        preco: Number(f.preco),
+      })),
     })),
   };
 
@@ -90,6 +99,10 @@ export default async function NovoPedidoPage({
             pesoLiquidoUnit: produto.pesoLiquido,
             valorUnitario: Number(item.valorUnitarioSnapshot),
             quantidade: Number(item.quantidade),
+            // preserva o preço histórico do pedido original; não recalcula
+            // por faixa automaticamente ao duplicar (o vendedor pode ajustar
+            // manualmente se quiser um preço novo).
+            precoManual: true,
           };
         }),
     };

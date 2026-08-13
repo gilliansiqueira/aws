@@ -3,6 +3,17 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, requireSession } from "@/lib/api-utils";
 
+const faixaSchema = z
+  .object({
+    quantidadeMinima: z.coerce.number().min(0, "Quantidade mínima inválida"),
+    quantidadeMaxima: z.coerce.number().min(0).nullable().optional(),
+    preco: z.coerce.number().min(0, "Preço da faixa inválido"),
+  })
+  .refine(
+    (f) => f.quantidadeMaxima == null || f.quantidadeMaxima >= f.quantidadeMinima,
+    { message: "Quantidade máxima deve ser maior ou igual à mínima", path: ["quantidadeMaxima"] },
+  );
+
 const schema = z.object({
   nome: z.string().min(1, "Informe o nome"),
   codigo: z.string().min(1, "Informe o código"),
@@ -12,6 +23,7 @@ const schema = z.object({
   unidade: z.string().min(1).default("UN"),
   pesoLiquido: z.coerce.number().min(0, "Peso deve ser maior ou igual a zero"),
   preco: z.coerce.number().min(0, "Preço deve ser maior ou igual a zero"),
+  faixas: z.array(faixaSchema).optional().default([]),
 });
 
 export async function GET(req: NextRequest) {
@@ -38,7 +50,11 @@ export async function GET(req: NextRequest) {
         industriaId ? { industriaId } : {},
       ],
     },
-    include: { marca: true, industria: true },
+    include: {
+      marca: true,
+      industria: true,
+      faixasPreco: { orderBy: { quantidadeMinima: "asc" } },
+    },
     orderBy: { nome: "asc" },
   });
   return NextResponse.json(produtos);
@@ -49,8 +65,21 @@ export async function POST(req: NextRequest) {
   if (response) return response;
 
   try {
-    const body = schema.parse(await req.json());
-    const produto = await prisma.produto.create({ data: body });
+    const { faixas, ...body } = schema.parse(await req.json());
+    const produto = await prisma.produto.create({
+      data: {
+        ...body,
+        faixasPreco: {
+          create: faixas.map((f, ordem) => ({
+            quantidadeMinima: f.quantidadeMinima,
+            quantidadeMaxima: f.quantidadeMaxima ?? null,
+            preco: f.preco,
+            ordem,
+          })),
+        },
+      },
+      include: { faixasPreco: true },
+    });
     return NextResponse.json(produto, { status: 201 });
   } catch (error) {
     return errorResponse(error);

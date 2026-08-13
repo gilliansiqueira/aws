@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { encontrarFaixaPreco } from "@/lib/pedido-calc";
 import { Stepper } from "./stepper";
 import { StepCliente } from "./step-cliente";
 import { StepProdutos } from "./step-produtos";
@@ -64,6 +65,9 @@ export function PedidoWizard({
   }
 
   function handleAddProduto(produto: ProdutoOption) {
+    const quantidadeInicial = 1;
+    const faixa = encontrarFaixaPreco(produto.faixas, quantidadeInicial);
+
     setItens((prev) => [
       ...prev,
       {
@@ -74,8 +78,9 @@ export function PedidoWizard({
         marcaNome: produto.marcaNome,
         unidade: produto.unidade,
         pesoLiquidoUnit: produto.pesoLiquido,
-        valorUnitario: produto.preco,
-        quantidade: 1,
+        valorUnitario: faixa ? faixa.preco : produto.preco,
+        quantidade: quantidadeInicial,
+        precoManual: false,
       },
     ]);
   }
@@ -89,7 +94,36 @@ export function PedidoWizard({
     patch: Partial<Pick<ItemWizard, "quantidade" | "valorUnitario">>,
   ) {
     setItens((prev) =>
-      prev.map((i) => (i.produtoId === produtoId ? { ...i, ...patch } : i)),
+      prev.map((item) => {
+        if (item.produtoId !== produtoId) return item;
+
+        // Preço editado manualmente: passa a valer o valor digitado e o item
+        // para de receber sugestão automática ao mudar a quantidade.
+        if ("valorUnitario" in patch) {
+          return { ...item, valorUnitario: patch.valorUnitario!, precoManual: true };
+        }
+
+        // Quantidade alterada: se o preço ainda não foi editado manualmente,
+        // sugere o preço da faixa correspondente à nova quantidade. Se o
+        // produto tem faixas mas nenhuma corresponde, não inventa preço —
+        // mantém o valor atual (o aviso de "sem faixa" aparece na tela).
+        const quantidade = patch.quantidade!;
+        let valorUnitario = item.valorUnitario;
+
+        if (!item.precoManual) {
+          const produto = catalogos.produtos.find((p) => p.id === produtoId);
+          if (produto) {
+            const faixa = encontrarFaixaPreco(produto.faixas, quantidade);
+            if (faixa) {
+              valorUnitario = faixa.preco;
+            } else if (produto.faixas.length === 0) {
+              valorUnitario = produto.preco;
+            }
+          }
+        }
+
+        return { ...item, quantidade, valorUnitario };
+      }),
     );
   }
 
@@ -190,7 +224,13 @@ export function PedidoWizard({
         />
       )}
 
-      {step === 3 && <StepQuantidades itens={itens} onChange={handleChangeItem} />}
+      {step === 3 && (
+        <StepQuantidades
+          itens={itens}
+          produtos={catalogos.produtos}
+          onChange={handleChangeItem}
+        />
+      )}
 
       {step === 4 && (
         <StepPrazo
