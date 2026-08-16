@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Camera } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Card, EmptyState } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
@@ -47,9 +47,14 @@ export default async function PedidosPage({
         title="Pedidos"
         description="Histórico de pedidos realizados."
         actions={
-          <ButtonLink href="/pedidos/novo">
-            <Plus size={16} /> Novo Pedido
-          </ButtonLink>
+          <>
+            <ButtonLink href="/pedidos/importar-foto" variant="secondary">
+              <Camera size={16} /> Novo Pedido por Foto
+            </ButtonLink>
+            <ButtonLink href="/pedidos/novo">
+              <Plus size={16} /> Novo Pedido
+            </ButtonLink>
+          </>
         }
       />
 
