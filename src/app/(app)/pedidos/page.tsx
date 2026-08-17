@@ -84,7 +84,7 @@ export default async function PedidosPage({
         </Select>
         <button
           type="submit"
-          className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-black/5"
+          className="rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5"
         >
           Filtrar
         </button>
@@ -108,7 +108,7 @@ export default async function PedidosPage({
               </thead>
               <tbody>
                 {pedidos.map((p) => (
-                  <tr key={p.id} className="border-b border-border last:border-0 hover:bg-black/[0.02]">
+                  <tr key={p.id} className="border-b border-border last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]">
                     <td className="px-4 py-3">
                       <Link href={`/pedidos/${p.id}`} className="font-semibold text-brand hover:underline">
                         #{p.numero}

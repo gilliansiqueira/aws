@@ -42,7 +42,7 @@ export default async function IndustriasPage() {
                 {industrias.map((ind) => (
                   <tr
                     key={ind.id}
-                    className="border-b border-border last:border-0 hover:bg-black/[0.02]"
+                    className="border-b border-border last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                   >
                     <td className="px-4 py-3 font-medium">{ind.nome}</td>
                     <td className="px-4 py-3">{formatCNPJ(ind.cnpj)}</td>
@@ -53,7 +53,7 @@ export default async function IndustriasPage() {
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/industrias/${ind.id}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
                         aria-label="Editar"
                       >
                         <Pencil size={15} />

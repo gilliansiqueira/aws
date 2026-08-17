@@ -54,7 +54,7 @@ export function Combobox({
     <div ref={containerRef} className="relative">
       <div
         className={`flex items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm ${
-          disabled ? "bg-black/5" : "cursor-text"
+          disabled ? "bg-black/5 dark:bg-white/5" : "cursor-text"
         }`}
         onClick={() => !disabled && setOpen(true)}
       >
@@ -100,8 +100,8 @@ export function Combobox({
                   setOpen(false);
                   setQuery("");
                 }}
-                className={`block w-full px-3 py-2 text-left text-sm hover:bg-black/5 ${
-                  o.id === value ? "bg-brand/10 font-medium" : ""
+                className={`block w-full px-3 py-2 text-left text-sm hover:bg-black/5 dark:hover:bg-white/5 ${
+                  o.id === value ? "bg-brand-soft font-medium" : ""
                 }`}
               >
                 <div>{o.label}</div>

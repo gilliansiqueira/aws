@@ -18,7 +18,7 @@ export function Stepper({ current }: { current: number }) {
                     ? "bg-success text-white"
                     : active
                       ? "bg-brand text-white"
-                      : "bg-black/10 text-muted"
+                      : "bg-black/10 text-muted dark:bg-white/10"
                 }`}
               >
                 {done ? <Check size={14} /> : step}

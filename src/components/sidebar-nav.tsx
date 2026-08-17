@@ -85,12 +85,15 @@ export function SidebarNav() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  className={`relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                     active
-                      ? "bg-brand text-white"
-                      : "text-foreground/80 hover:bg-black/5"
+                      ? "bg-brand-soft text-brand dark:text-brand-dark"
+                      : "text-foreground/70 hover:bg-black/5 hover:text-foreground dark:hover:bg-white/5"
                   }`}
                 >
+                  {active && (
+                    <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />
+                  )}
                   <Icon size={18} />
                   {item.label}
                 </Link>
@@ -112,7 +115,13 @@ export function SidebarNav() {
         <Menu size={20} />
       </button>
 
-      <aside className="no-print hidden w-64 shrink-0 border-r border-border bg-surface md:flex md:flex-col">
+      <aside className="no-print hidden w-64 shrink-0 border-r border-border bg-sidebar md:flex md:flex-col">
+        <div className="flex h-14 items-center gap-2 border-b border-border px-4">
+          <span className="flex h-7 w-7 items-center justify-center rounded-md bg-brand text-xs font-bold text-white">
+            AWS
+          </span>
+          <span className="text-sm font-semibold tracking-tight">Gestão Comercial</span>
+        </div>
         {content}
       </aside>
 
@@ -122,7 +131,7 @@ export function SidebarNav() {
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute left-0 top-0 h-full w-72 bg-surface shadow-xl">
+          <div className="absolute left-0 top-0 h-full w-72 bg-sidebar shadow-xl">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <span className="font-semibold">Menu</span>
               <button onClick={() => setOpen(false)} aria-label="Fechar menu">

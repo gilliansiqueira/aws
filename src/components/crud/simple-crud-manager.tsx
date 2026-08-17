@@ -158,7 +158,7 @@ export function SimpleCrudManager<T extends { id: string }>({
                 {items.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-border last:border-0 hover:bg-black/[0.02]"
+                    className="border-b border-border last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                   >
                     {columns.map((c) => (
                       <td key={c.key} className="px-4 py-3">
@@ -175,14 +175,14 @@ export function SimpleCrudManager<T extends { id: string }>({
                       <div className="flex justify-end gap-1">
                         <button
                           onClick={() => openEdit(item)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
                           aria-label="Editar"
                         >
                           <Pencil size={15} />
                         </button>
                         <button
                           onClick={() => handleDelete(item)}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-red-50 hover:text-danger"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-red-50 hover:text-danger dark:hover:bg-red-500/10"
                           aria-label="Excluir"
                         >
                           <Trash2 size={15} />
