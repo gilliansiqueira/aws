@@ -2,6 +2,7 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import { importarFornecedores } from "./imports/2026-08-fornecedores";
+import { importarFornecedorMangas } from "./imports/2026-08-mangas";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -87,6 +88,7 @@ async function main() {
   // partir das tabelas de preço recebidas — roda sempre (não é dado de
   // demonstração), idempotente via upsert por código.
   await importarFornecedores(prisma);
+  await importarFornecedorMangas(prisma);
 
   // Dados de exemplo (marca/indústria/cliente/produto fictícios) só são criados
   // quando SEED_DEMO_DATA=true — em produção (Vercel) fica de fora, para o banco
