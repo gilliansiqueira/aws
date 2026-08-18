@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Camera } from "lucide-react";
+import { Plus, Camera, FileText } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Card, EmptyState } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
@@ -104,6 +104,7 @@ export default async function PedidosPage({
                   <th className="px-4 py-3 font-medium">Indústria</th>
                   <th className="px-4 py-3 font-medium">Status</th>
                   <th className="px-4 py-3 font-medium">Valor</th>
+                  <th className="px-4 py-3" />
                 </tr>
               </thead>
               <tbody>
@@ -124,6 +125,16 @@ export default async function PedidosPage({
                     </td>
                     <td className="px-4 py-3 font-medium">
                       {formatCurrencyBRL(p.valorTotal.toString())}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        href={`/pedidos/${p.id}/espelho`}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
+                        aria-label="Ver espelho do pedido"
+                        title="Ver espelho do pedido"
+                      >
+                        <FileText size={15} />
+                      </Link>
                     </td>
                   </tr>
                 ))}

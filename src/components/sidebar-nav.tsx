@@ -21,15 +21,15 @@ import {
   X,
 } from "lucide-react";
 
-type NavItem = { href: string; label: string; icon: React.ElementType };
+type NavItem = { href: string; label: string; icon: React.ElementType; badge?: number };
 type NavGroup = { title: string; items: NavItem[] };
 
-const groups: NavGroup[] = [
+const buildGroups = (pedidosEmAberto: number): NavGroup[] => [
   {
     title: "Principal",
     items: [
       { href: "/", label: "Início", icon: LayoutDashboard },
-      { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
+      { href: "/pedidos", label: "Pedidos", icon: ClipboardList, badge: pedidosEmAberto || undefined },
       { href: "/pedidos/novo", label: "Novo Pedido", icon: PlusCircle },
       { href: "/amostras", label: "Amostras", icon: FlaskConical },
       { href: "/mapa", label: "Mapa de Vendas", icon: Map },
@@ -65,9 +65,10 @@ function isActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(href + "/");
 }
 
-export function SidebarNav() {
+export function SidebarNav({ pedidosEmAberto = 0 }: { pedidosEmAberto?: number }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const groups = buildGroups(pedidosEmAberto);
 
   const content = (
     <nav className="flex flex-col gap-6 overflow-y-auto px-3 py-4">
@@ -95,7 +96,12 @@ export function SidebarNav() {
                     <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />
                   )}
                   <Icon size={18} />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {!!item.badge && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1.5 text-[11px] font-semibold text-white">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               );
             })}

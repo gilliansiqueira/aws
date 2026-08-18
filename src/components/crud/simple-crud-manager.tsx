@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 import { Card, EmptyState, PageHeader } from "@/components/ui/page-header";
+import { TableSkeleton } from "@/components/ui/skeleton";
 
 export type CrudField = {
   name: string;
@@ -48,6 +50,8 @@ export function SimpleCrudManager<T extends { id: string }>({
   const [form, setForm] = useState<Record<string, string | boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<T | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -110,17 +114,23 @@ export function SimpleCrudManager<T extends { id: string }>({
     }
 
     setModalOpen(false);
+    toast.success(editing ? "Registro atualizado." : "Registro criado.");
     load();
   }
 
-  async function handleDelete(item: T) {
-    if (!confirm("Tem certeza que deseja excluir este registro?")) return;
-    const res = await fetch(`${apiBase}/${item.id}`, { method: "DELETE" });
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const res = await fetch(`${apiBase}/${deleteTarget.id}`, { method: "DELETE" });
+    setDeleting(false);
+
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Não foi possível excluir.");
+      toast.error(data.error ?? "Não foi possível excluir.");
       return;
     }
+    setDeleteTarget(null);
+    toast.success("Registro excluído.");
     load();
   }
 
@@ -138,7 +148,7 @@ export function SimpleCrudManager<T extends { id: string }>({
 
       <Card className="p-0">
         {loading ? (
-          <p className="p-6 text-sm text-muted">Carregando...</p>
+          <TableSkeleton cols={columns.length} />
         ) : items.length === 0 ? (
           <EmptyState title={emptyTitle} />
         ) : (
@@ -181,7 +191,7 @@ export function SimpleCrudManager<T extends { id: string }>({
                           <Pencil size={15} />
                         </button>
                         <button
-                          onClick={() => handleDelete(item)}
+                          onClick={() => setDeleteTarget(item)}
                           className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-red-50 hover:text-danger dark:hover:bg-red-500/10"
                           aria-label="Excluir"
                         >
@@ -256,6 +266,24 @@ export function SimpleCrudManager<T extends { id: string }>({
             </Button>
           </div>
         </form>
+      </Modal>
+
+      <Modal
+        open={deleteTarget !== null}
+        onClose={() => setDeleteTarget(null)}
+        title="Excluir registro"
+      >
+        <p className="text-sm text-muted">
+          Tem certeza que deseja excluir este registro? Essa ação não pode ser desfeita.
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <Button type="button" variant="secondary" onClick={() => setDeleteTarget(null)}>
+            Cancelar
+          </Button>
+          <Button type="button" variant="danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? "Excluindo..." : "Excluir"}
+          </Button>
+        </div>
       </Modal>
     </div>
   );

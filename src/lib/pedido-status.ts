@@ -24,3 +24,12 @@ export const STATUS_PEDIDO_ORDER = [
   "ENTREGUE",
   "CANCELADO",
 ] as const;
+
+// Estados que ainda não chegaram ao fim do fluxo (usado no dashboard e no
+// contador de "pedidos em aberto" da sidebar).
+export const STATUS_PEDIDO_EM_ABERTO = [
+  "RASCUNHO",
+  "REALIZADO",
+  "ENVIADO_INDUSTRIA",
+  "EM_ANDAMENTO",
+] as const;
