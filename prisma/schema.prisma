@@ -268,6 +268,12 @@ model Pedido {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Exclusão lógica: preenchido quando o pedido é "excluído" pela interface,
+  // mas não é rascunho (mantém histórico/auditoria). Some das listagens,
+  // continua acessível por link direto. Pedido em RASCUNHO é removido de
+  // verdade (nunca foi enviado, sem valor de auditoria).
+  deletedAt DateTime?
+
   itens    ItemPedido[]
   parcelas Parcela[]
   amostras Amostra[]

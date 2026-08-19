@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   }
 
   const pedidosEmAberto = await prisma.pedido.count({
-    where: { status: { in: [...STATUS_PEDIDO_EM_ABERTO] } },
+    where: { status: { in: [...STATUS_PEDIDO_EM_ABERTO] }, deletedAt: null },
   });
 
   return (

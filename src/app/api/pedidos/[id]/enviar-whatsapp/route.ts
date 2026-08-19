@@ -11,6 +11,12 @@ export async function POST(
 
   try {
     const { id } = await params;
+
+    const atual = await prisma.pedido.findUnique({ where: { id }, select: { deletedAt: true } });
+    if (!atual || atual.deletedAt) {
+      return NextResponse.json({ error: "Pedido não encontrado" }, { status: 404 });
+    }
+
     const pedido = await prisma.pedido.update({
       where: { id },
       data: {

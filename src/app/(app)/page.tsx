@@ -35,31 +35,34 @@ export default async function HomePage() {
   ] = await Promise.all([
     prisma.pedido.aggregate({
       _sum: { valorTotal: true },
-      where: { dataPedido: { gte: inicioMes }, status: { not: "CANCELADO" } },
+      where: { dataPedido: { gte: inicioMes }, status: { not: "CANCELADO" }, deletedAt: null },
     }),
     prisma.pedido.count({
-      where: { dataPedido: { gte: inicioMes }, status: { not: "CANCELADO" } },
+      where: { dataPedido: { gte: inicioMes }, status: { not: "CANCELADO" }, deletedAt: null },
     }),
-    prisma.pedido.count({ where: { status: { in: [...STATUS_PEDIDO_EM_ABERTO] } } }),
+    prisma.pedido.count({ where: { status: { in: [...STATUS_PEDIDO_EM_ABERTO] }, deletedAt: null } }),
     prisma.pedido.count({
-      where: { dataPedido: { gte: inicioMes }, status: "ENTREGUE" },
+      where: { dataPedido: { gte: inicioMes }, status: "ENTREGUE", deletedAt: null },
     }),
     prisma.pedido.aggregate({
       _sum: { valorTotal: true },
-      where: { status: { in: [...STATUS_PEDIDO_EM_ABERTO] } },
+      where: { status: { in: [...STATUS_PEDIDO_EM_ABERTO] }, deletedAt: null },
     }),
     prisma.cliente.count({ where: { ativo: true } }),
-    prisma.pedido.findMany({ orderBy: { numero: "desc" }, take: 5 }),
+    prisma.pedido.findMany({ where: { deletedAt: null }, orderBy: { numero: "desc" }, take: 5 }),
     prisma.itemPedido.findMany({
-      where: { pedido: { dataPedido: { gte: inicioJanela }, status: { not: "CANCELADO" } } },
+      where: { pedido: { dataPedido: { gte: inicioJanela }, status: { not: "CANCELADO" }, deletedAt: null } },
       select: { descricaoSnapshot: true, valorTotal: true },
     }),
     prisma.pedido.findMany({
-      where: { dataPedido: { gte: inicioJanela }, status: { not: "CANCELADO" } },
+      where: { dataPedido: { gte: inicioJanela }, status: { not: "CANCELADO" }, deletedAt: null },
       select: { dataPedido: true, valorTotal: true },
     }),
     prisma.parcela.findMany({
-      where: { vencimento: { gte: inicioMes, lte: fimMes }, pedido: { status: { not: "CANCELADO" } } },
+      where: {
+        vencimento: { gte: inicioMes, lte: fimMes },
+        pedido: { status: { not: "CANCELADO" }, deletedAt: null },
+      },
       select: { vencimento: true },
     }),
   ]);

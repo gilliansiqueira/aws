@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader, Card } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { StatusUpdater } from "@/components/pedidos/status-updater";
+import { DeletePedidoButton } from "@/components/pedidos/delete-pedido-button";
 import {
   formatCNPJ,
   formatCurrencyBRL,
@@ -27,6 +28,8 @@ export default async function DetalhePedidoPage({
 
   if (!pedido) notFound();
 
+  const excluido = pedido.deletedAt !== null;
+
   return (
     <div>
       <PageHeader
@@ -37,13 +40,31 @@ export default async function DetalhePedidoPage({
             <ButtonLink href={`/pedidos/${pedido.id}/espelho`} variant="secondary">
               <FileText size={16} /> Ver Espelho
             </ButtonLink>
-            <ButtonLink href={`/pedidos/novo?duplicar=${pedido.id}`} variant="secondary">
-              <Copy size={16} /> Duplicar
-            </ButtonLink>
-            <StatusUpdater pedidoId={pedido.id} status={pedido.status} />
+            {!excluido && (
+              <>
+                <ButtonLink href={`/pedidos/novo?duplicar=${pedido.id}`} variant="secondary">
+                  <Copy size={16} /> Duplicar
+                </ButtonLink>
+                <StatusUpdater pedidoId={pedido.id} status={pedido.status} />
+                <DeletePedidoButton
+                  pedidoId={pedido.id}
+                  numero={pedido.numero}
+                  status={pedido.status}
+                  variant="button"
+                  redirectTo="/pedidos"
+                />
+              </>
+            )}
           </>
         }
       />
+
+      {excluido && (
+        <div className="mb-4 rounded-xl border border-danger/30 bg-red-50 px-4 py-3 text-sm text-danger dark:bg-red-500/10">
+          Este pedido foi excluído em {formatDateTimeBR(pedido.deletedAt!)} — fica visível aqui só para consulta e
+          auditoria.
+        </div>
+      )}
 
       <div className="flex flex-col gap-4">
         <Card>

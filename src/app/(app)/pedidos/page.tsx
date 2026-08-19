@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader, Card, EmptyState } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { DeletePedidoButton } from "@/components/pedidos/delete-pedido-button";
 import { Select } from "@/components/ui/field";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
 import {
@@ -22,6 +23,7 @@ export default async function PedidosPage({
   const industriaId = typeof params.industriaId === "string" ? params.industriaId : "";
 
   const where: Prisma.PedidoWhereInput = {
+    deletedAt: null,
     AND: [
       status ? { status: status as StatusPedido } : {},
       industriaId ? { industriaId } : {},
@@ -127,14 +129,17 @@ export default async function PedidosPage({
                       {formatCurrencyBRL(p.valorTotal.toString())}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/pedidos/${p.id}/espelho`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
-                        aria-label="Ver espelho do pedido"
-                        title="Ver espelho do pedido"
-                      >
-                        <FileText size={15} />
-                      </Link>
+                      <div className="flex justify-end gap-1">
+                        <Link
+                          href={`/pedidos/${p.id}/espelho`}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
+                          aria-label="Ver espelho do pedido"
+                          title="Ver espelho do pedido"
+                        >
+                          <FileText size={15} />
+                        </Link>
+                        <DeletePedidoButton pedidoId={p.id} numero={p.numero} status={p.status} />
+                      </div>
                     </td>
                   </tr>
                 ))}
