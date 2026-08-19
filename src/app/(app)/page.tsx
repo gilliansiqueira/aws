@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { DollarSign, ClipboardList, Users, Package, TrendingUp } from "lucide-react";
+import { ClipboardList, Users, Package } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Card, EmptyState } from "@/components/ui/page-header";
 import { Badge } from "@/components/ui/badge";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { BlobMetricCard } from "@/components/dashboard/blob-metric-card";
+import { VencimentosCard } from "@/components/dashboard/vencimentos-card";
+import { ProgressRing } from "@/components/dashboard/progress-ring";
 import { VendasChart } from "@/components/dashboard/vendas-chart";
 import { RankingBars } from "@/components/dashboard/ranking-bars";
 import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
@@ -14,16 +17,21 @@ const MESES_CURTO = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "se
 export default async function HomePage() {
   const agora = new Date();
   const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+  const fimMes = new Date(agora.getFullYear(), agora.getMonth() + 1, 0, 23, 59, 59);
   const inicioJanela = new Date(agora.getFullYear(), agora.getMonth() - 5, 1);
+  const daqui7Dias = new Date(agora.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const [
     faturamentoMes,
     pedidosNoMes,
     pedidosEmAberto,
+    pedidosEntreguesNoMes,
+    valorEmAberto,
     clientesAtivos,
     ultimosPedidos,
     itensJanela,
     pedidosJanela,
+    parcelasMes,
   ] = await Promise.all([
     prisma.pedido.aggregate({
       _sum: { valorTotal: true },
@@ -33,6 +41,13 @@ export default async function HomePage() {
       where: { dataPedido: { gte: inicioMes }, status: { not: "CANCELADO" } },
     }),
     prisma.pedido.count({ where: { status: { in: [...STATUS_PEDIDO_EM_ABERTO] } } }),
+    prisma.pedido.count({
+      where: { dataPedido: { gte: inicioMes }, status: "ENTREGUE" },
+    }),
+    prisma.pedido.aggregate({
+      _sum: { valorTotal: true },
+      where: { status: { in: [...STATUS_PEDIDO_EM_ABERTO] } },
+    }),
     prisma.cliente.count({ where: { ativo: true } }),
     prisma.pedido.findMany({ orderBy: { numero: "desc" }, take: 5 }),
     prisma.itemPedido.findMany({
@@ -43,7 +58,17 @@ export default async function HomePage() {
       where: { dataPedido: { gte: inicioJanela }, status: { not: "CANCELADO" } },
       select: { dataPedido: true, valorTotal: true },
     }),
+    prisma.parcela.findMany({
+      where: { vencimento: { gte: inicioMes, lte: fimMes }, pedido: { status: { not: "CANCELADO" } } },
+      select: { vencimento: true },
+    }),
   ]);
+
+  const diasComVencimento = new Set(parcelasMes.map((p) => new Date(p.vencimento).getDate()));
+  const totalVencendoSemana = parcelasMes.filter(
+    (p) => p.vencimento >= agora && p.vencimento <= daqui7Dias,
+  ).length;
+  const percentEntregues = pedidosNoMes > 0 ? (pedidosEntreguesNoMes / pedidosNoMes) * 100 : 0;
 
   // Ranking de produtos: agrupa por descrição (nome do produto no momento do
   // pedido) somando o valor faturado — feito em memória porque o volume de
@@ -88,32 +113,33 @@ export default async function HomePage() {
         description="Visão geral do desempenho comercial da AWS."
       />
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard
-          icon={DollarSign}
-          label="Faturamento do mês"
-          value={formatCurrencyBRL(Number(faturamentoMes._sum.valorTotal ?? 0))}
-          tone="success"
+      <div className="grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <BlobMetricCard
+            titulo="Faturamento do mês"
+            faturado={Number(faturamentoMes._sum.valorTotal ?? 0)}
+            emAberto={Number(valorEmAberto._sum.valorTotal ?? 0)}
+          />
+        </div>
+        <VencimentosCard
+          ano={agora.getFullYear()}
+          mes={agora.getMonth()}
+          hoje={agora.getDate()}
+          diasComVencimento={diasComVencimento}
+          totalVencendoSemana={totalVencendoSemana}
         />
-        <StatCard
-          icon={ClipboardList}
-          label="Pedidos no mês"
-          value={String(pedidosNoMes)}
-          tone="brand"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Pedidos em aberto"
-          value={String(pedidosEmAberto)}
-          hint="Rascunho até em andamento"
-          tone="warning"
-        />
-        <StatCard
-          icon={Users}
-          label="Clientes ativos"
-          value={String(clientesAtivos)}
-          tone="brand"
-        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Card className="flex items-center">
+          <ProgressRing
+            percent={percentEntregues}
+            label="Pedidos entregues"
+            sublabel={`${pedidosEntreguesNoMes} de ${pedidosNoMes} pedidos do mês`}
+          />
+        </Card>
+        <StatCard icon={ClipboardList} label="Pedidos em aberto" value={String(pedidosEmAberto)} tone="warning" />
+        <StatCard icon={Users} label="Clientes ativos" value={String(clientesAtivos)} tone="brand" />
       </div>
 
       {!temAlgumPedido ? (
