@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/field";
 import { Card, EmptyState, PageHeader } from "@/components/ui/page-header";
 import { TableSkeleton } from "@/components/ui/skeleton";
+import { dateInputValue } from "@/lib/format";
 
 export type CrudField = {
   name: string;
   label: string;
-  type?: "text" | "number" | "color" | "checkbox";
+  type?: "text" | "number" | "color" | "checkbox" | "date";
   required?: boolean;
   placeholder?: string;
   step?: string;
@@ -84,7 +85,11 @@ export function SimpleCrudManager<T extends { id: string }>({
     fields.forEach((f) => {
       const value = (item as unknown as Record<string, unknown>)[f.name];
       initial[f.name] =
-        f.type === "checkbox" ? Boolean(value) : String(value ?? "");
+        f.type === "checkbox"
+          ? Boolean(value)
+          : f.type === "date" && value
+            ? dateInputValue(value as string)
+            : String(value ?? "");
     });
     setForm(initial);
     setError(null);

@@ -19,6 +19,8 @@ import {
   Settings,
   Menu,
   X,
+  HandCoins,
+  Receipt,
 } from "lucide-react";
 
 type NavItem = { href: string; label: string; icon: React.ElementType; badge?: number };
@@ -49,6 +51,13 @@ const buildGroups = (pedidosEmAberto: number): NavGroup[] => [
         label: "Formas de Pagamento",
         icon: CreditCard,
       },
+    ],
+  },
+  {
+    title: "Financeiro",
+    items: [
+      { href: "/comissoes", label: "Comissões", icon: HandCoins },
+      { href: "/gastos", label: "Gastos da AWS", icon: Receipt },
     ],
   },
   {
