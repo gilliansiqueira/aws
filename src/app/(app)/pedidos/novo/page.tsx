@@ -1,6 +1,7 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/ui/page-header";
-import { PedidoWizard } from "@/components/pedidos/wizard";
+import { PedidoWizardLoader } from "@/components/pedidos/wizard-loader";
 import type { WizardCatalogs, WizardInitialData } from "@/components/pedidos/types";
 
 export default async function NovoPedidoPage({
@@ -118,7 +119,9 @@ export default async function NovoPedidoPage({
             : undefined
         }
       />
-      <PedidoWizard catalogos={catalogos} initial={initial} />
+      <Suspense fallback={null}>
+        <PedidoWizardLoader catalogos={catalogos} initialFromServer={initial} />
+      </Suspense>
     </div>
   );
 }
