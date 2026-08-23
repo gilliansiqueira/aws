@@ -426,12 +426,51 @@ model GastoAws {
   contaContabilId String
   contaContabil   ContaContabil @relation(fields: [contaContabilId], references: [id])
 
+  // Presente quando o gasto foi gerado por um lançamento recorrente ou
+  // parcelado (ver GastoSerie) — permite editar/cancelar as parcelas
+  // ainda não vencidas de uma vez, mantendo as passadas como histórico.
+  serieId       String?
+  serie         GastoSerie? @relation(fields: [serieId], references: [id])
+  numeroParcela Int?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([data])
   @@index([contaContabilId])
+  @@index([serieId])
   @@map("gastos_aws")
+}
+
+enum TipoSerieGasto {
+  RECORRENTE
+  PARCELADO
+}
+
+// Um lançamento recorrente ("aluguel todo mês") ou parcelado ("compra em
+// 3x") gera de uma vez os N gastos futuros (um GastoAws por mês), todos
+// ligados a esta série — o número de parcelas é sempre fixo, definido na
+// criação. Editar ou cancelar a série altera só os gastos com data ainda
+// não vencida; os que já ocorreram ficam intocados pro histórico.
+model GastoSerie {
+  id                 String         @id @default(cuid())
+  descricao          String
+  tipo               TipoSerieGasto
+  contaContabilId    String
+  contaContabil      ContaContabil  @relation(fields: [contaContabilId], references: [id])
+  quantidadeParcelas Int
+  valorParcela       Decimal        @db.Decimal(12, 2)
+  dataInicio         DateTime
+  observacoes        String?
+  canceladoEm        DateTime?
+
+  gastos GastoAws[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contaContabilId])
+  @@map("gastos_series")
 }
 
 // ---------------------------------------------------------------------------
@@ -467,6 +506,7 @@ model ContaContabil {
 
   gastos    GastoAws[]
   comissoes Comissao[]
+  series    GastoSerie[]
 
   @@index([grupoId])
   @@map("contas_contabeis")
