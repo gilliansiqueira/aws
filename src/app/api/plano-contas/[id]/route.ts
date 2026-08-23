@@ -3,12 +3,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, requireSession } from "@/lib/api-utils";
 
-const gastoSchema = z.object({
-  contaContabilId: z.string().min(1, "Selecione a conta"),
-  descricao: z.string().min(1, "Informe a descrição"),
-  valor: z.coerce.number().positive("Valor deve ser maior que zero"),
-  data: z.coerce.date(),
-  observacoes: z.string().optional().nullable(),
+const grupoSchema = z.object({
+  nome: z.string().min(1, "Informe o nome do grupo"),
+  tipo: z.enum(["RECEITA", "DESPESA"]),
+  ativo: z.boolean().optional(),
 });
 
 export async function PUT(
@@ -20,9 +18,9 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body = gastoSchema.parse(await req.json());
-    const gasto = await prisma.gastoAws.update({ where: { id }, data: body });
-    return NextResponse.json(gasto);
+    const body = grupoSchema.parse(await req.json());
+    const grupo = await prisma.grupoConta.update({ where: { id }, data: body });
+    return NextResponse.json(grupo);
   } catch (error) {
     return errorResponse(error);
   }
@@ -37,7 +35,14 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    await prisma.gastoAws.delete({ where: { id } });
+    const contaVinculada = await prisma.contaContabil.findFirst({ where: { grupoId: id } });
+    if (contaVinculada) {
+      return NextResponse.json(
+        { error: "Não é possível excluir: existem contas cadastradas neste grupo." },
+        { status: 409 },
+      );
+    }
+    await prisma.grupoConta.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error);

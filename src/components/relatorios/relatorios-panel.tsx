@@ -21,6 +21,15 @@ type Pedido = {
 
 type Item = { nome: string; valor: number };
 
+type ContaFechamento = { id: string; nome: string; total: number };
+type GrupoFechamento = {
+  id: string;
+  nome: string;
+  tipo: "RECEITA" | "DESPESA";
+  contas: ContaFechamento[];
+  subtotal: number;
+};
+
 function csvEscape(value: string | number): string {
   const s = String(value);
   return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -47,7 +56,10 @@ export function RelatoriosPanel({
   porIndustria,
   porVendedor,
   porProduto,
-  porCategoriaGasto,
+  porContaGasto,
+  fechamento,
+  totalReceitasContas,
+  totalDespesasContas,
 }: {
   de: string;
   ate: string;
@@ -58,7 +70,10 @@ export function RelatoriosPanel({
   porIndustria: Item[];
   porVendedor: Item[];
   porProduto: Item[];
-  porCategoriaGasto: Item[];
+  porContaGasto: Item[];
+  fechamento: GrupoFechamento[];
+  totalReceitasContas: number;
+  totalDespesasContas: number;
 }) {
   const router = useRouter();
   const [filtroDe, setFiltroDe] = useState(de);
@@ -135,12 +150,64 @@ export function RelatoriosPanel({
         </div>
       )}
 
-      {porCategoriaGasto.length > 0 && (
+      {porContaGasto.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-semibold">Gastos por categoria</h2>
-          <RankingBars itens={porCategoriaGasto} />
+          <h2 className="mb-3 text-sm font-semibold">Gastos por conta</h2>
+          <RankingBars itens={porContaGasto} />
         </Card>
       )}
+
+      <Card>
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="text-sm font-semibold">Fechamento mensal — plano de contas</h2>
+          <span className="text-xs text-muted">{formatDateBR(de)} a {formatDateBR(ate)}</span>
+        </div>
+        <p className="mb-4 text-xs text-muted">
+          Receita de vendas, comissões pagas e gastos do período, classificados pela conta contábil de cada
+          lançamento.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          {(["RECEITA", "DESPESA"] as const).map((tipo) => {
+            const gruposDoTipo = fechamento.filter((g) => g.tipo === tipo);
+            const total = tipo === "RECEITA" ? totalReceitasContas : totalDespesasContas;
+            return (
+              <div key={tipo} className="rounded-xl border border-border p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">
+                  {tipo === "RECEITA" ? "Receitas" : "Despesas"}
+                </p>
+                <div className="flex flex-col gap-4">
+                  {gruposDoTipo.map((g) => (
+                    <div key={g.id}>
+                      <div className="mb-1 flex items-center justify-between text-sm font-medium">
+                        <span>{g.nome}</span>
+                        <span>{formatCurrencyBRL(g.subtotal)}</span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        {g.contas.map((c) => (
+                          <div key={c.id} className="flex items-center justify-between text-xs text-muted">
+                            <span>{c.nome}</span>
+                            <span>{formatCurrencyBRL(c.total)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm font-semibold">
+                  <span>Total {tipo === "RECEITA" ? "receitas" : "despesas"}</span>
+                  <span className={tipo === "RECEITA" ? "text-success" : "text-danger"}>{formatCurrencyBRL(total)}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-black/[0.03] px-4 py-3 text-sm font-semibold dark:bg-white/[0.05]">
+          <span>Resultado do período (receitas − despesas)</span>
+          <span className={totalReceitasContas - totalDespesasContas >= 0 ? "text-success" : "text-danger"}>
+            {formatCurrencyBRL(totalReceitasContas - totalDespesasContas)}
+          </span>
+        </div>
+      </Card>
 
       {pedidos.length > 0 && (
         <Card className="p-0">

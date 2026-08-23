@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { errorResponse, requireSession } from "@/lib/api-utils";
 
 const gastoSchema = z.object({
-  categoria: z.string().min(1, "Informe a categoria"),
+  contaContabilId: z.string().min(1, "Selecione a conta"),
   descricao: z.string().min(1, "Informe a descrição"),
   valor: z.coerce.number().positive("Valor deve ser maior que zero"),
   data: z.coerce.date(),
@@ -15,7 +15,10 @@ export async function GET() {
   const { response } = await requireSession();
   if (response) return response;
 
-  const gastos = await prisma.gastoAws.findMany({ orderBy: { data: "desc" } });
+  const gastos = await prisma.gastoAws.findMany({
+    include: { contaContabil: { include: { grupo: true } } },
+    orderBy: { data: "desc" },
+  });
   return NextResponse.json(gastos);
 }
 

@@ -3,12 +3,9 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, requireSession } from "@/lib/api-utils";
 
-const gastoSchema = z.object({
-  contaContabilId: z.string().min(1, "Selecione a conta"),
-  descricao: z.string().min(1, "Informe a descrição"),
-  valor: z.coerce.number().positive("Valor deve ser maior que zero"),
-  data: z.coerce.date(),
-  observacoes: z.string().optional().nullable(),
+const contaSchema = z.object({
+  nome: z.string().min(1, "Informe o nome da conta"),
+  ativo: z.boolean().optional(),
 });
 
 export async function PUT(
@@ -20,9 +17,9 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body = gastoSchema.parse(await req.json());
-    const gasto = await prisma.gastoAws.update({ where: { id }, data: body });
-    return NextResponse.json(gasto);
+    const body = contaSchema.parse(await req.json());
+    const conta = await prisma.contaContabil.update({ where: { id }, data: body });
+    return NextResponse.json(conta);
   } catch (error) {
     return errorResponse(error);
   }
@@ -37,7 +34,17 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    await prisma.gastoAws.delete({ where: { id } });
+    const [gastoVinculado, comissaoVinculada] = await Promise.all([
+      prisma.gastoAws.findFirst({ where: { contaContabilId: id } }),
+      prisma.comissao.findFirst({ where: { contaContabilId: id } }),
+    ]);
+    if (gastoVinculado || comissaoVinculada) {
+      return NextResponse.json(
+        { error: "Não é possível excluir: existem lançamentos vinculados a esta conta. Desative em vez de excluir." },
+        { status: 409 },
+      );
+    }
+    await prisma.contaContabil.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error);

@@ -394,6 +394,12 @@ model Comissao {
   pedidoId String @unique
   pedido   Pedido @relation(fields: [pedidoId], references: [id])
 
+  // Conta do plano de contas (Despesas Operacionais > Comissões, por
+  // padrão) — preenchida automaticamente pela API, sem exigir escolha
+  // manual do usuário a cada lançamento.
+  contaContabilId String?
+  contaContabil    ContaContabil? @relation(fields: [contaContabilId], references: [id])
+
   valor         Decimal   @db.Decimal(12, 2)
   pago          Boolean   @default(false)
   dataPagamento DateTime?
@@ -408,19 +414,60 @@ model Comissao {
 }
 
 // Gasto geral da distribuidora (aluguel, combustível, salário etc.) —
-// controle simples, sem vínculo com pedido/comissão.
+// classificado por uma conta do plano de contas (substitui o antigo
+// campo "categoria" solto em texto).
 model GastoAws {
   id          String   @id @default(cuid())
-  categoria   String
   descricao   String
   valor       Decimal  @db.Decimal(12, 2)
   data        DateTime
   observacoes String?
 
+  contaContabilId String
+  contaContabil   ContaContabil @relation(fields: [contaContabilId], references: [id])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([data])
-  @@index([categoria])
+  @@index([contaContabilId])
   @@map("gastos_aws")
+}
+
+// ---------------------------------------------------------------------------
+// Plano de contas — usado pra classificar Gastos e Comissões, e pro
+// fechamento mensal (DRE simplificado) em Relatórios. Estrutura de 2
+// níveis: Grupo (Receita ou Despesa) > Conta.
+// ---------------------------------------------------------------------------
+
+enum TipoConta {
+  RECEITA
+  DESPESA
+}
+
+model GrupoConta {
+  id    String    @id @default(cuid())
+  nome  String
+  tipo  TipoConta
+  ordem Int       @default(0)
+  ativo Boolean   @default(true)
+
+  contas ContaContabil[]
+
+  @@map("grupos_conta")
+}
+
+model ContaContabil {
+  id      String     @id @default(cuid())
+  nome    String
+  grupoId String
+  grupo   GrupoConta @relation(fields: [grupoId], references: [id])
+  ordem   Int        @default(0)
+  ativo   Boolean    @default(true)
+
+  gastos    GastoAws[]
+  comissoes Comissao[]
+
+  @@index([grupoId])
+  @@map("contas_contabeis")
 }

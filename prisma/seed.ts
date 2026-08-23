@@ -3,6 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import { importarFornecedores } from "./imports/2026-08-fornecedores";
 import { importarFornecedorMangas } from "./imports/2026-08-mangas";
+import { seedPlanoContasPadrao } from "./imports/plano-contas-padrao";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -89,6 +90,7 @@ async function main() {
   // demonstração), idempotente via upsert por código.
   await importarFornecedores(prisma);
   await importarFornecedorMangas(prisma);
+  await seedPlanoContasPadrao(prisma);
 
   // Dados de exemplo (marca/indústria/cliente/produto fictícios) só são criados
   // quando SEED_DEMO_DATA=true — em produção (Vercel) fica de fora, para o banco

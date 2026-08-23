@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
         userId: body.userId,
         valor: body.valor,
         observacoes: body.observacoes,
+        contaContabilId: "conta-comissoes",
       },
     });
     return NextResponse.json(comissao, { status: 201 });

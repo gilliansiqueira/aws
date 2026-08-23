@@ -19,7 +19,7 @@ export default async function RelatoriosPage({
   const de = typeof params.de === "string" && params.de ? new Date(`${params.de}T00:00:00`) : inicioMesAtual();
   const ate = typeof params.ate === "string" && params.ate ? new Date(`${params.ate}T23:59:59`) : fimMesAtual();
 
-  const [pedidos, comissoesPagas, gastos] = await Promise.all([
+  const [pedidos, comissoesPagas, gastos, grupos] = await Promise.all([
     prisma.pedido.findMany({
       where: { dataPedido: { gte: de, lte: ate }, status: { not: "CANCELADO" }, deletedAt: null },
       select: {
@@ -38,11 +38,16 @@ export default async function RelatoriosPage({
     }),
     prisma.comissao.findMany({
       where: { pago: true, dataPagamento: { gte: de, lte: ate } },
-      select: { valor: true },
+      select: { valor: true, contaContabilId: true },
     }),
     prisma.gastoAws.findMany({
       where: { data: { gte: de, lte: ate } },
-      select: { valor: true, categoria: true },
+      select: { valor: true, contaContabilId: true, contaContabil: { select: { nome: true } } },
+    }),
+    prisma.grupoConta.findMany({
+      where: { ativo: true },
+      include: { contas: { where: { ativo: true }, orderBy: { ordem: "asc" } } },
+      orderBy: { ordem: "asc" },
     }),
   ]);
 
@@ -62,16 +67,42 @@ export default async function RelatoriosPage({
     }
   }
 
-  const porCategoriaGasto = new Map<string, number>();
+  const porContaGasto = new Map<string, number>();
   for (const g of gastos) {
-    porCategoriaGasto.set(g.categoria, (porCategoriaGasto.get(g.categoria) ?? 0) + Number(g.valor));
+    porContaGasto.set(g.contaContabil.nome, (porContaGasto.get(g.contaContabil.nome) ?? 0) + Number(g.valor));
   }
+
+  // Fechamento mensal por plano de contas: soma cada conta contábil a
+  // partir das três origens possíveis (receita de pedidos, comissões pagas,
+  // gastos lançados) e agrupa por Grupo (Receitas / Despesas...).
+  const totalPorConta = new Map<string, number>();
+  totalPorConta.set("conta-receita-vendas", totalFaturamento);
+  for (const c of comissoesPagas) {
+    const contaId = c.contaContabilId ?? "conta-comissoes";
+    totalPorConta.set(contaId, (totalPorConta.get(contaId) ?? 0) + Number(c.valor));
+  }
+  for (const g of gastos) {
+    totalPorConta.set(g.contaContabilId, (totalPorConta.get(g.contaContabilId) ?? 0) + Number(g.valor));
+  }
+
+  const fechamento = grupos.map((gr) => {
+    const contas = gr.contas.map((c) => ({ id: c.id, nome: c.nome, total: totalPorConta.get(c.id) ?? 0 }));
+    return {
+      id: gr.id,
+      nome: gr.nome,
+      tipo: gr.tipo,
+      contas,
+      subtotal: contas.reduce((acc, c) => acc + c.total, 0),
+    };
+  });
+  const totalReceitasContas = fechamento.filter((g) => g.tipo === "RECEITA").reduce((acc, g) => acc + g.subtotal, 0);
+  const totalDespesasContas = fechamento.filter((g) => g.tipo === "DESPESA").reduce((acc, g) => acc + g.subtotal, 0);
 
   return (
     <div>
       <PageHeader
         title="Relatórios"
-        description="Vendas, comissões e gastos consolidados por período."
+        description="Vendas, comissões e gastos consolidados por período — com fechamento mensal pelo plano de contas."
       />
       <RelatoriosPanel
         de={de.toISOString().slice(0, 10)}
@@ -90,7 +121,10 @@ export default async function RelatoriosPage({
         porIndustria={[...porIndustria.entries()].sort((a, b) => b[1] - a[1]).map(([nome, valor]) => ({ nome, valor }))}
         porVendedor={[...porVendedor.entries()].sort((a, b) => b[1] - a[1]).map(([nome, valor]) => ({ nome, valor }))}
         porProduto={[...porProduto.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([nome, valor]) => ({ nome, valor }))}
-        porCategoriaGasto={[...porCategoriaGasto.entries()].sort((a, b) => b[1] - a[1]).map(([nome, valor]) => ({ nome, valor }))}
+        porContaGasto={[...porContaGasto.entries()].sort((a, b) => b[1] - a[1]).map(([nome, valor]) => ({ nome, valor }))}
+        fechamento={fechamento}
+        totalReceitasContas={totalReceitasContas}
+        totalDespesasContas={totalDespesasContas}
       />
     </div>
   );

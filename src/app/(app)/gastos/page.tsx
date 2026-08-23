@@ -1,38 +1,43 @@
-"use client";
+import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/ui/page-header";
+import { GastosPanel } from "@/components/gastos/gastos-panel";
 
-import { SimpleCrudManager } from "@/components/crud/simple-crud-manager";
-import { formatCurrencyBRL, formatDateBR } from "@/lib/format";
+export default async function GastosPage() {
+  const [gastos, grupos] = await Promise.all([
+    prisma.gastoAws.findMany({
+      include: { contaContabil: { include: { grupo: true } } },
+      orderBy: { data: "desc" },
+    }),
+    prisma.grupoConta.findMany({
+      where: { tipo: "DESPESA", ativo: true },
+      include: { contas: { where: { ativo: true }, orderBy: { ordem: "asc" } } },
+      orderBy: { ordem: "asc" },
+    }),
+  ]);
 
-type Gasto = {
-  id: string;
-  categoria: string;
-  descricao: string;
-  valor: string;
-  data: string;
-  observacoes: string | null;
-};
-
-export default function GastosPage() {
   return (
-    <SimpleCrudManager<Gasto>
-      title="Gastos da AWS"
-      description="Controle de despesas gerais da distribuidora (aluguel, combustível, salário etc.)."
-      apiBase="/api/gastos"
-      newLabel="Novo Gasto"
-      emptyTitle="Nenhum gasto cadastrado"
-      fields={[
-        { name: "categoria", label: "Categoria", required: true, placeholder: "Ex: Aluguel, Combustível, Comissão..." },
-        { name: "descricao", label: "Descrição", required: true },
-        { name: "valor", label: "Valor (R$)", type: "number", step: "0.01", required: true },
-        { name: "data", label: "Data", type: "date", required: true },
-        { name: "observacoes", label: "Observações" },
-      ]}
-      columns={[
-        { key: "data", label: "Data", render: (item) => formatDateBR(item.data) },
-        { key: "categoria", label: "Categoria" },
-        { key: "descricao", label: "Descrição" },
-        { key: "valor", label: "Valor", render: (item) => formatCurrencyBRL(item.valor) },
-      ]}
-    />
+    <div>
+      <PageHeader
+        title="Gastos da AWS"
+        description="Controle de despesas gerais da distribuidora, classificadas pelo plano de contas."
+      />
+      <GastosPanel
+        gastosIniciais={gastos.map((g) => ({
+          id: g.id,
+          descricao: g.descricao,
+          valor: Number(g.valor),
+          data: g.data.toISOString(),
+          observacoes: g.observacoes,
+          contaContabilId: g.contaContabilId,
+          contaNome: g.contaContabil.nome,
+          grupoNome: g.contaContabil.grupo.nome,
+        }))}
+        grupos={grupos.map((gr) => ({
+          id: gr.id,
+          nome: gr.nome,
+          contas: gr.contas.map((c) => ({ id: c.id, nome: c.nome })),
+        }))}
+      />
+    </div>
   );
 }
