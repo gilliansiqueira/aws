@@ -31,7 +31,7 @@ export function Modal({
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 dark:hover:bg-white/10"
             aria-label="Fechar"
           >
             <X size={18} />

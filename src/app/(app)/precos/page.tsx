@@ -4,7 +4,7 @@ import { PrecosTable } from "./precos-table";
 
 export default async function PrecosPage() {
   const produtos = await prisma.produto.findMany({
-    include: { marca: true, industria: true },
+    include: { marca: true, industria: true, _count: { select: { faixasPreco: true } } },
     orderBy: { nome: "asc" },
   });
 
@@ -16,13 +16,14 @@ export default async function PrecosPage() {
     marcaCor: p.marca.cor,
     industriaNome: p.industria.nome,
     preco: p.preco.toString(),
+    numFaixas: p._count.faixasPreco,
   }));
 
   return (
     <div>
       <PageHeader
         title="Preços"
-        description="Edição rápida de preço por produto. Pedidos já criados não são afetados."
+        description="Edição rápida do preço padrão por produto. Faixas de preço por quantidade são editadas no cadastro do produto. Pedidos já criados não são afetados."
       />
       <PrecosTable items={items} />
     </div>

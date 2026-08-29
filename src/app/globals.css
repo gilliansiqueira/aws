@@ -1,26 +1,50 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
-  --background: #f4f5f7;
+  --background: #f5f6f8;
   --surface: #ffffff;
-  --foreground: #1c2130;
-  --muted: #6b7280;
-  --border: #e5e7eb;
+  --surface-hover: #f1f2f5;
+  --sidebar: #fbfbfc;
+  --foreground: #12141c;
+  --muted: #667085;
+  --border: #e4e6ec;
   --brand: #1d4ed8;
   --brand-dark: #1e3a8a;
+  --brand-soft: #eef2ff;
   --danger: #dc2626;
   --success: #16a34a;
   --warning: #d97706;
 }
 
+:root[data-theme="dark"] {
+  --background: #0a0b0f;
+  --surface: #131620;
+  --surface-hover: #1b1f2b;
+  --sidebar: #0d0f17;
+  --foreground: #e8eaf0;
+  --muted: #8992a8;
+  --border: #242836;
+  --brand: #5b8def;
+  --brand-dark: #8ab4ff;
+  --brand-soft: rgba(91, 141, 239, 0.14);
+  --danger: #f47171;
+  --success: #4ade80;
+  --warning: #fbbf24;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-sidebar: var(--sidebar);
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
+  --color-brand-soft: var(--brand-soft);
   --color-danger: var(--danger);
   --color-success: var(--success);
   --color-warning: var(--warning);
@@ -32,6 +56,30 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+* {
+  border-color: var(--border);
+}
+
+::selection {
+  background: var(--brand);
+  color: white;
+}
+
+/* Scrollbar mais fina e discreta — reforça a sensação "tech" nas telas com
+   tabela/menu longos, sem depender de nenhuma lib extra. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
 }
 
 @media print {

@@ -13,6 +13,7 @@ type Item = {
   marcaCor: string;
   industriaNome: string;
   preco: string;
+  numFaixas: number;
 };
 
 export function PrecosTable({ items }: { items: Item[] }) {
@@ -84,7 +85,14 @@ export function PrecosTable({ items }: { items: Item[] }) {
                       <td className="px-4 py-3 font-mono text-xs">
                         {item.codigo}
                       </td>
-                      <td className="px-4 py-3 font-medium">{item.nome}</td>
+                      <td className="px-4 py-3 font-medium">
+                        {item.nome}
+                        {item.numFaixas > 0 && (
+                          <span className="ml-2 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+                            {item.numFaixas} faixa{item.numFaixas > 1 ? "s" : ""}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1.5">
                           <span

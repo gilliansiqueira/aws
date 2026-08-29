@@ -10,7 +10,10 @@ export default async function EditarProdutoPage({
   const { id } = await params;
 
   const [produto, marcas, industrias] = await Promise.all([
-    prisma.produto.findUnique({ where: { id } }),
+    prisma.produto.findUnique({
+      where: { id },
+      include: { faixasPreco: { orderBy: { quantidadeMinima: "asc" } } },
+    }),
     prisma.marca.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
     prisma.industria.findMany({ where: { ativo: true }, orderBy: { nome: "asc" } }),
   ]);
@@ -36,6 +39,12 @@ export default async function EditarProdutoPage({
           unidade: produto.unidade,
           pesoLiquido: produto.pesoLiquido.toString(),
           preco: produto.preco.toString(),
+          faixas: produto.faixasPreco.map((f) => ({
+            id: f.id,
+            quantidadeMinima: f.quantidadeMinima.toString(),
+            quantidadeMaxima: f.quantidadeMaxima === null ? "" : f.quantidadeMaxima.toString(),
+            preco: f.preco.toString(),
+          })),
         }}
         marcas={marcas}
         industrias={industrias}

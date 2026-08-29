@@ -1,10 +1,11 @@
 import Link from "next/link";
 
 const variants = {
-  primary: "bg-brand text-white hover:bg-brand-dark",
-  secondary: "border border-border bg-surface text-foreground hover:bg-black/5",
-  danger: "bg-danger text-white hover:bg-danger/90",
-  ghost: "text-foreground hover:bg-black/5",
+  primary: "bg-brand text-white shadow-sm hover:bg-brand-dark",
+  secondary:
+    "border border-border bg-surface text-foreground hover:bg-black/5 dark:hover:bg-white/5",
+  danger: "bg-danger text-white shadow-sm hover:bg-danger/90",
+  ghost: "text-foreground hover:bg-black/5 dark:hover:bg-white/5",
 };
 
 const sizes = {

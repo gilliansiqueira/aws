@@ -50,6 +50,12 @@ envio via WhatsApp, amostras, dashboard e mapa de vendas.
    ```
    `NEXTAUTH_URL` não é necessário (o NextAuth está configurado com `trustHost: true`, detecta a
    URL automaticamente a partir da requisição).
+
+   Para o leitor de imagens (Novo Pedido por Foto), adicione também:
+   ```
+   GEMINI_API_KEY=<chave gerada em https://aistudio.google.com/apikey>
+   GEMINI_MODEL=gemini-flash-latest
+   ```
 4. Clique em Deploy. O projeto já tem um script `vercel-build` (`prisma migrate deploy && prisma
    db seed && next build`) que roda as migrações e o seed essencial automaticamente a cada deploy
    — é seguro rodar repetidas vezes (usa `upsert`, não duplica nem sobrescreve dados existentes).
@@ -78,10 +84,28 @@ envio via WhatsApp, amostras, dashboard e mapa de vendas.
 - `EmpresaConfig` — dados da AWS usados no cabeçalho do espelho (registro único).
 - `User` — usuários do sistema (`ADMIN` / `VENDEDOR`), pronto para múltiplos usuários no futuro.
 
+## Leitor universal de imagens (Gemini)
+
+`src/lib/gemini-image-reader.ts` é o único ponto do projeto que fala com a API do Gemini —
+recebe uma imagem (foto de documento, ficha manuscrita, print de planilha, nota fiscal, recibo,
+formulário etc.) e devolve uma leitura estruturada e genérica (campos, tabelas, textos, valores,
+datas, cada um com nota de confiança 0–1). Não é específico de nenhum layout de documento, e a
+extração não depende de identificar corretamente o tipo do documento — mesmo sem classificar,
+extrai o que conseguir ler. Nunca inventa valor: quando não há certeza, retorna `null` com
+confiança baixa.
+
+Usado hoje em **Pedidos → Novo Pedido por Foto** (`/pedidos/importar-foto`), que mostra o
+resultado para conferência manual antes de qualquer uso — a leitura nunca cria dados sozinha.
+
+Variáveis de ambiente: `GEMINI_API_KEY` (obrigatória) e `GEMINI_MODEL` (opcional, default
+`gemini-flash-latest`) — nunca expostas ao frontend.
+
 ## Status do projeto
 
 Módulos prontos: Cadastros (Marcas, Indústrias, Transportadoras, Formas de Pagamento, Clientes,
 Produtos, Preços), Configurações (Empresa/Usuários), Pedidos (wizard de 5 passos, numeração,
-duplicação) e Espelho do Pedido + envio via WhatsApp.
+duplicação, preço por faixa de quantidade), Espelho do Pedido + envio via WhatsApp, e o leitor
+universal de imagens (leitura/revisão — ainda não preenche o wizard automaticamente).
 
-Módulos em construção: Amostras, Dashboard, Mapa de Vendas, Relatórios.
+Módulos em construção: mapear a leitura de imagem pros campos do pedido (cliente/produto do
+cadastro), Amostras, Dashboard, Mapa de Vendas, Relatórios.

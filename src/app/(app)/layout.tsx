@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { SidebarNav } from "@/components/sidebar-nav";
 import { Topbar } from "@/components/topbar";
+import { STATUS_PEDIDO_EM_ABERTO } from "@/lib/pedido-status";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const session = await auth();
@@ -10,9 +12,13 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     redirect("/login");
   }
 
+  const pedidosEmAberto = await prisma.pedido.count({
+    where: { status: { in: [...STATUS_PEDIDO_EM_ABERTO] }, deletedAt: null },
+  });
+
   return (
     <div className="flex min-h-screen flex-1">
-      <SidebarNav />
+      <SidebarNav pedidosEmAberto={pedidosEmAberto} />
       <div className="flex min-h-screen flex-1 flex-col">
         <Topbar
           userName={session.user?.name ?? ""}

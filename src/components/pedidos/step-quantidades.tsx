@@ -1,13 +1,17 @@
+import { AlertTriangle } from "lucide-react";
 import { Card, EmptyState } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/field";
 import { formatCurrencyBRL, formatNumberBR } from "@/lib/format";
-import type { ItemWizard } from "./types";
+import { encontrarFaixaPreco } from "@/lib/pedido-calc";
+import type { ItemWizard, ProdutoOption } from "./types";
 
 export function StepQuantidades({
   itens,
+  produtos,
   onChange,
 }: {
   itens: ItemWizard[];
+  produtos: ProdutoOption[];
   onChange: (produtoId: string, patch: Partial<Pick<ItemWizard, "quantidade" | "valorUnitario">>) => void;
 }) {
   const pesoTotal = itens.reduce((acc, i) => acc + i.pesoLiquidoUnit * i.quantidade, 0);
@@ -40,44 +44,65 @@ export function StepQuantidades({
               </tr>
             </thead>
             <tbody>
-              {itens.map((item) => (
-                <tr key={item.produtoId} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3">
-                    <p className="font-medium">{item.descricao}</p>
-                    <p className="text-xs text-muted">{item.codigo}</p>
-                  </td>
-                  <td className="px-4 py-3">
-                    <Input
-                      type="number"
-                      min="0.001"
-                      step="0.001"
-                      className="w-24"
-                      value={item.quantidade}
-                      onChange={(e) =>
-                        onChange(item.produtoId, { quantidade: Number(e.target.value) })
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-3">
-                    <Input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      className="w-28"
-                      value={item.valorUnitario}
-                      onChange={(e) =>
-                        onChange(item.produtoId, { valorUnitario: Number(e.target.value) })
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {formatNumberBR(item.pesoLiquidoUnit * item.quantidade, 3)} kg
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap font-medium">
-                    {formatCurrencyBRL(item.valorUnitario * item.quantidade)}
-                  </td>
-                </tr>
-              ))}
+              {itens.map((item) => {
+                const produto = produtos.find((p) => p.id === item.produtoId);
+                const faixas = produto?.faixas ?? [];
+                const faixaAplicada = encontrarFaixaPreco(faixas, item.quantidade);
+                const semFaixaCorrespondente = faixas.length > 0 && !faixaAplicada;
+
+                return (
+                  <tr key={item.produtoId} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{item.descricao}</p>
+                      <p className="text-xs text-muted">{item.codigo}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="number"
+                        min="0.001"
+                        step="0.001"
+                        className="w-24"
+                        value={item.quantidade}
+                        onChange={(e) =>
+                          onChange(item.produtoId, { quantidade: Number(e.target.value) })
+                        }
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className="w-28"
+                        value={item.valorUnitario}
+                        onChange={(e) =>
+                          onChange(item.produtoId, { valorUnitario: Number(e.target.value) })
+                        }
+                      />
+                      {faixaAplicada && !item.precoManual && (
+                        <p className="mt-1 text-xs text-success">
+                          Faixa {formatNumberBR(faixaAplicada.quantidadeMinima, 0)}
+                          {faixaAplicada.quantidadeMaxima !== null
+                            ? `–${formatNumberBR(faixaAplicada.quantidadeMaxima, 0)}`
+                            : "+"}
+                          : {formatCurrencyBRL(faixaAplicada.preco)}
+                        </p>
+                      )}
+                      {semFaixaCorrespondente && (
+                        <p className="mt-1 flex items-center gap-1 text-xs text-warning">
+                          <AlertTriangle size={12} /> Sem faixa para esta quantidade — confira o preço
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {formatNumberBR(item.pesoLiquidoUnit * item.quantidade, 3)} kg
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap font-medium">
+                      {formatCurrencyBRL(item.valorUnitario * item.quantidade)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -21,7 +21,7 @@ export default async function ProdutosPage({
           ],
         }
       : undefined,
-    include: { marca: true, industria: true },
+    include: { marca: true, industria: true, _count: { select: { faixasPreco: true } } },
     orderBy: { nome: "asc" },
   });
 
@@ -68,7 +68,7 @@ export default async function ProdutosPage({
                 {produtos.map((p) => (
                   <tr
                     key={p.id}
-                    className="border-b border-border last:border-0 hover:bg-black/[0.02]"
+                    className="border-b border-border last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                   >
                     <td className="px-4 py-3 font-mono text-xs">{p.codigo}</td>
                     <td className="px-4 py-3 font-medium">{p.nome}</td>
@@ -85,11 +85,18 @@ export default async function ProdutosPage({
                     <td className="px-4 py-3">
                       {formatNumberBR(p.pesoLiquido.toString(), 3)} kg
                     </td>
-                    <td className="px-4 py-3">{formatCurrencyBRL(p.preco.toString())}</td>
+                    <td className="px-4 py-3">
+                      {formatCurrencyBRL(p.preco.toString())}
+                      {p._count.faixasPreco > 0 && (
+                        <span className="ml-2 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
+                          {p._count.faixasPreco} faixa{p._count.faixasPreco > 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/produtos/${p.id}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
                         aria-label="Editar"
                       >
                         <Pencil size={15} />

@@ -34,6 +34,7 @@ export async function GET(req: NextRequest) {
   const q = params.get("q");
 
   const where: Prisma.PedidoWhereInput = {
+    deletedAt: null,
     AND: [
       status ? { status: status as StatusPedido } : {},
       clienteId ? { clienteId } : {},

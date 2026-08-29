@@ -65,7 +65,7 @@ export default async function ClientesPage({
                 {clientes.map((c) => (
                   <tr
                     key={c.id}
-                    className="border-b border-border last:border-0 hover:bg-black/[0.02]"
+                    className="border-b border-border last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
                   >
                     <td className="px-4 py-3 font-medium">{c.nome}</td>
                     <td className="px-4 py-3">{formatCNPJ(c.cnpj)}</td>
@@ -76,7 +76,7 @@ export default async function ClientesPage({
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/clientes/${c.id}`}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-black/5 hover:text-foreground dark:hover:bg-white/10"
                         aria-label="Editar"
                       >
                         <Pencil size={15} />

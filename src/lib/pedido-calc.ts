@@ -44,3 +44,29 @@ export function calcularParcelas(
 
   return parcelas;
 }
+
+// Preço por faixa de quantidade -----------------------------------------------
+
+export type FaixaPrecoCalc = {
+  quantidadeMinima: number;
+  quantidadeMaxima: number | null; // null = sem limite superior
+  preco: number;
+};
+
+// Encontra a faixa cuja quantidade mínima/máxima contém a quantidade informada.
+// A quantidade é comparada diretamente na unidade de venda do produto, sem
+// conversão (kg com kg, caixa com caixa etc.). Retorna null se não houver
+// faixas ou se nenhuma faixa corresponder — nesse caso o chamador decide o
+// fallback (Produto.preco) ou sinaliza que não há preço para a quantidade.
+export function encontrarFaixaPreco<T extends FaixaPrecoCalc>(
+  faixas: T[],
+  quantidade: number,
+): T | null {
+  return (
+    faixas.find(
+      (f) =>
+        quantidade >= f.quantidadeMinima &&
+        (f.quantidadeMaxima === null || quantidade <= f.quantidadeMaxima),
+    ) ?? null
+  );
+}

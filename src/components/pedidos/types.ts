@@ -28,6 +28,13 @@ export type FormaPagamentoOption = {
   intervaloDias: number;
 };
 
+export type FaixaPrecoOption = {
+  id: string;
+  quantidadeMinima: number;
+  quantidadeMaxima: number | null;
+  preco: number;
+};
+
 export type ProdutoOption = {
   id: string;
   nome: string;
@@ -38,6 +45,7 @@ export type ProdutoOption = {
   unidade: string;
   pesoLiquido: number;
   preco: number;
+  faixas: FaixaPrecoOption[];
 };
 
 export type ItemWizard = {
@@ -50,6 +58,9 @@ export type ItemWizard = {
   pesoLiquidoUnit: number;
   valorUnitario: number;
   quantidade: number;
+  // true quando o vendedor editou o preço manualmente — nesse caso o wizard
+  // para de sugerir automaticamente o preço da faixa ao mudar a quantidade.
+  precoManual: boolean;
 };
 
 export type WizardCatalogs = {
