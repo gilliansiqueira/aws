@@ -11,7 +11,7 @@ export default async function NovoProdutoPage() {
   return (
     <div>
       <PageHeader title="Novo Produto" />
-      <ProdutoForm marcas={marcas} industrias={industrias} />
+      <ProdutoForm marcas={marcas.map((m) => ({ id: m.id, nome: m.nome }))} industrias={industrias} />
     </div>
   );
 }

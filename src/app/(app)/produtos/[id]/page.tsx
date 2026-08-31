@@ -46,7 +46,7 @@ export default async function EditarProdutoPage({
             preco: f.preco.toString(),
           })),
         }}
-        marcas={marcas}
+        marcas={marcas.map((m) => ({ id: m.id, nome: m.nome }))}
         industrias={industrias}
       />
     </div>

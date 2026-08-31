@@ -106,10 +106,19 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const emUso = await prisma.itemPedido.findFirst({ where: { produtoId: id } });
-    if (emUso) {
+    const [emPedidoAtivo, emAmostra] = await Promise.all([
+      prisma.itemPedido.findFirst({ where: { produtoId: id, pedido: { deletedAt: null } } }),
+      prisma.amostra.findFirst({ where: { produtoId: id } }),
+    ]);
+    if (emPedidoAtivo) {
       return NextResponse.json(
-        { error: "Não é possível excluir: existem pedidos vinculados a este produto." },
+        { error: "Não é possível excluir: existem pedidos ativos vinculados a este produto." },
+        { status: 409 },
+      );
+    }
+    if (emAmostra) {
+      return NextResponse.json(
+        { error: "Não é possível excluir: existem amostras vinculadas a este produto." },
         { status: 409 },
       );
     }

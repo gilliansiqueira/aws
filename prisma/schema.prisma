@@ -334,7 +334,11 @@ model ItemPedido {
   ordem    Int    @default(0)
 
   produtoId String?
-  produto   Produto? @relation(fields: [produtoId], references: [id])
+  // SetNull: o item já guarda um snapshot completo (código, descrição,
+  // preço) — a referência ao cadastro é só de conveniência, então não
+  // deve travar a exclusão do produto quando o pedido é histórico
+  // (soft-deleted) ou o produto some do catálogo.
+  produto   Produto? @relation(fields: [produtoId], references: [id], onDelete: SetNull)
 
   // snapshot do produto no momento do pedido
   codigoSnapshot        String
