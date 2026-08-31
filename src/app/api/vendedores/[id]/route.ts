@@ -3,12 +3,10 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { errorResponse, requireSession } from "@/lib/api-utils";
 
-const marcaSchema = z.object({
+const vendedorSchema = z.object({
   nome: z.string().min(1, "Informe o nome"),
-  cor: z
-    .string()
-    .regex(/^#[0-9A-Fa-f]{6}$/, "Cor deve estar no formato hexadecimal (#RRGGBB)"),
-  percentualComissao: z.coerce.number().min(0, "Não pode ser negativo").max(100, "Não pode passar de 100%"),
+  ativo: z.boolean().optional(),
+  marcaIds: z.array(z.string()).min(1, "Selecione ao menos uma marca"),
 });
 
 export async function PUT(
@@ -20,9 +18,22 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const body = marcaSchema.parse(await req.json());
-    const marca = await prisma.marca.update({ where: { id }, data: body });
-    return NextResponse.json(marca);
+    const body = vendedorSchema.parse(await req.json());
+
+    const vendedor = await prisma.$transaction(async (tx) => {
+      await tx.vendedorMarca.deleteMany({ where: { vendedorId: id } });
+      return tx.vendedor.update({
+        where: { id },
+        data: {
+          nome: body.nome,
+          ativo: body.ativo ?? true,
+          marcas: { create: body.marcaIds.map((marcaId) => ({ marcaId })) },
+        },
+        include: { marcas: { include: { marca: true } } },
+      });
+    });
+
+    return NextResponse.json(vendedor);
   } catch (error) {
     return errorResponse(error);
   }
@@ -37,14 +48,7 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const emUso = await prisma.produto.findFirst({ where: { marcaId: id } });
-    if (emUso) {
-      return NextResponse.json(
-        { error: "Não é possível excluir: existem produtos vinculados a esta marca." },
-        { status: 409 },
-      );
-    }
-    await prisma.marca.delete({ where: { id } });
+    await prisma.vendedor.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (error) {
     return errorResponse(error);

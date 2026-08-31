@@ -18,6 +18,7 @@ export type EmpresaData = {
   uf: string;
   cep: string;
   telefone: string;
+  percentualImposto: string;
 };
 
 export function EmpresaForm({ initial }: { initial: EmpresaData }) {
@@ -146,6 +147,25 @@ export function EmpresaForm({ initial }: { initial: EmpresaData }) {
               value={formatCEP(form.cep)}
               onChange={(e) => set("cep", e.target.value)}
               placeholder="00000-000"
+            />
+          </div>
+        </div>
+      </Card>
+
+      <Card>
+        <h3 className="mb-4 text-sm font-semibold text-muted">Fechamento mensal de comissões</h3>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <Label required>Alíquota de imposto descontada do vendedor (%)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              required
+              value={form.percentualImposto}
+              onChange={(e) => set("percentualImposto", e.target.value)}
+              placeholder="9,70"
             />
           </div>
         </div>

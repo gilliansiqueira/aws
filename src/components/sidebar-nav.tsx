@@ -22,6 +22,7 @@ import {
   HandCoins,
   Receipt,
   BookOpen,
+  UserCog,
 } from "lucide-react";
 
 type NavItem = { href: string; label: string; icon: React.ElementType; badge?: number };
@@ -58,6 +59,7 @@ const buildGroups = (pedidosEmAberto: number): NavGroup[] => [
     title: "Financeiro",
     items: [
       { href: "/comissoes", label: "Comissões", icon: HandCoins },
+      { href: "/vendedores", label: "Vendedores", icon: UserCog },
       { href: "/gastos", label: "Gastos da AWS", icon: Receipt },
       { href: "/plano-contas", label: "Plano de Contas", icon: BookOpen },
     ],

@@ -29,6 +29,7 @@ export default async function ConfiguracoesPage() {
             uf: empresa?.uf ?? "",
             cep: empresa?.cep ?? "",
             telefone: empresa?.telefone ?? "",
+            percentualImposto: empresa ? String(Number(empresa.percentualImposto)) : "9.7",
           }}
         />
       </div>

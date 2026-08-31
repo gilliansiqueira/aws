@@ -8,6 +8,7 @@ const marcaSchema = z.object({
   cor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, "Cor deve estar no formato hexadecimal (#RRGGBB)"),
+  percentualComissao: z.coerce.number().min(0, "Não pode ser negativo").max(100, "Não pode passar de 100%"),
 });
 
 export async function GET() {

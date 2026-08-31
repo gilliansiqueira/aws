@@ -13,6 +13,7 @@ const schema = z.object({
   uf: z.string().min(1),
   cep: z.string().min(1),
   telefone: z.string().min(1),
+  percentualImposto: z.coerce.number().min(0, "Não pode ser negativo").max(100, "Não pode passar de 100%"),
 });
 
 export async function GET() {

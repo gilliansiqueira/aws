@@ -52,6 +52,11 @@ model EmpresaConfig {
   uf           String
   cep          String
   telefone     String
+
+  // Alíquota padrão descontada do vendedor no fechamento mensal de
+  // comissões (ex: 9.7 = 9,7%). Configurável aqui em vez de fixa no código.
+  percentualImposto Decimal @db.Decimal(5, 2) @default(9.7)
+
   updatedAt    DateTime @updatedAt
 
   @@map("empresa_config")
@@ -66,13 +71,48 @@ model Marca {
   nome      String   @unique
   cor       String // hex, ex: #2563EB — usado em gráficos e no mapa
   ativo     Boolean  @default(true)
+
+  // % de comissão aplicada sobre o valor vendido (limitado ao valor de
+  // tabela) pra qualquer vendedor que atenda essa marca. Ex: 12.5 = 12,5%.
+  percentualComissao Decimal @db.Decimal(5, 2) @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   produtos  Produto[]
   amostras  Amostra[]
+  vendedores VendedorMarca[]
 
   @@map("marcas")
+}
+
+// Vendedor externo do fechamento mensal de comissões — cadastro à parte
+// dos usuários do sistema (User), já que nem todo vendedor tem login aqui.
+model Vendedor {
+  id    String  @id @default(cuid())
+  nome  String
+  ativo Boolean @default(true)
+
+  marcas VendedorMarca[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("vendedores")
+}
+
+// Marcas que um vendedor atende — o percentual de comissão usado é sempre
+// o da Marca (não há percentual próprio do vendedor).
+model VendedorMarca {
+  id         String   @id @default(cuid())
+  vendedorId String
+  vendedor   Vendedor @relation(fields: [vendedorId], references: [id], onDelete: Cascade)
+  marcaId    String
+  marca      Marca    @relation(fields: [marcaId], references: [id])
+
+  @@unique([vendedorId, marcaId])
+  @@index([marcaId])
+  @@map("vendedores_marcas")
 }
 
 model Industria {
