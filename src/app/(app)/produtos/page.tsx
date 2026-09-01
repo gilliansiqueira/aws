@@ -3,27 +3,39 @@ import { Plus, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Card, EmptyState } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
+import { Pagination } from "@/components/ui/pagination";
 import { formatCurrencyBRL, formatNumberBR } from "@/lib/format";
+
+const PAGE_SIZE = 30;
 
 export default async function ProdutosPage({
   searchParams,
 }: PageProps<"/produtos">) {
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q : "";
+  const page = Math.max(1, Number(params.page) || 1);
 
-  const produtos = await prisma.produto.findMany({
-    where: q
-      ? {
-          OR: [
-            { nome: { contains: q, mode: "insensitive" } },
-            { codigo: { contains: q, mode: "insensitive" } },
-            { referencia: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : undefined,
-    include: { marca: true, industria: true, _count: { select: { faixasPreco: true } } },
-    orderBy: { nome: "asc" },
-  });
+  const where = q
+    ? {
+        OR: [
+          { nome: { contains: q, mode: "insensitive" as const } },
+          { codigo: { contains: q, mode: "insensitive" as const } },
+          { referencia: { contains: q, mode: "insensitive" as const } },
+        ],
+      }
+    : undefined;
+
+  const [produtos, totalItems] = await Promise.all([
+    prisma.produto.findMany({
+      where,
+      include: { marca: true, industria: true, _count: { select: { faixasPreco: true } } },
+      orderBy: { nome: "asc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.produto.count({ where }),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
 
   return (
     <div>
@@ -108,6 +120,14 @@ export default async function ProdutosPage({
             </table>
           </div>
         )}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          pageSize={PAGE_SIZE}
+          basePath="/produtos"
+          searchParams={q ? { q } : {}}
+        />
       </Card>
     </div>
   );

@@ -1,3 +1,4 @@
+import { AlertTriangle, Ban } from "lucide-react";
 import { Card } from "@/components/ui/page-header";
 import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/field";
@@ -45,6 +46,16 @@ export function StepCliente({
               ]
                 .filter(Boolean)
                 .join(" · ") || "Sem dados adicionais cadastrados"}
+            </p>
+          )}
+          {clienteSelecionado?.statusCredito === "BLOQUEADO" && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-danger">
+              <Ban size={13} /> Cliente bloqueado — não é possível lançar pedido para ele.
+            </p>
+          )}
+          {clienteSelecionado?.statusCredito === "PROTESTADO" && (
+            <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-warning">
+              <AlertTriangle size={13} /> Cliente com protesto — prossiga com cautela.
             </p>
           )}
         </div>

@@ -8,6 +8,8 @@ export type PedidoParaEspelho = Prisma.PedidoGetPayload<{
 
 export function EspelhoDocumento({ pedido }: { pedido: PedidoParaEspelho }) {
   const empresa = pedido.empresaSnapshot as unknown as EmpresaSnapshot;
+  const subtotalItens = pedido.itens.reduce((acc, i) => acc + Number(i.valorTotal), 0);
+  const descontoPercentual = Number(pedido.descontoPercentual);
 
   return (
     <div className="mx-auto max-w-3xl bg-white p-8 text-sm text-black shadow-sm print:shadow-none">
@@ -109,9 +111,21 @@ export function EspelhoDocumento({ pedido }: { pedido: PedidoParaEspelho }) {
         <div className="flex gap-6">
           <span>{formatQtyBR(pedido.pesoTotal.toString())}</span>
           <span>{formatQtyBR(pedido.quantidadeTotal.toString())}</span>
-          <span>{formatCurrencyBRL(pedido.valorTotal.toString())}</span>
+          <span>{formatCurrencyBRL(subtotalItens)}</span>
         </div>
       </div>
+      {descontoPercentual > 0 && (
+        <div className="flex items-center justify-end gap-6 py-1 text-xs font-semibold">
+          <span>Desconto ({descontoPercentual}%)</span>
+          <span>-{formatCurrencyBRL(subtotalItens - Number(pedido.valorTotal))}</span>
+        </div>
+      )}
+      {descontoPercentual > 0 && (
+        <div className="flex items-center justify-end gap-6 border-b border-black/40 py-1 text-sm font-bold">
+          <span>Total com desconto</span>
+          <span>{formatCurrencyBRL(pedido.valorTotal.toString())}</span>
+        </div>
+      )}
       <p className="mb-4 mt-1 font-bold uppercase">{pedido.formaPagamentoNomeSnapshot}</p>
 
       {/* Parcelas */}

@@ -1,6 +1,7 @@
 export type ClienteOption = {
   id: string;
   nome: string;
+  statusCredito: "ATIVO" | "BLOQUEADO" | "PROTESTADO";
   cnpj: string | null;
   cidade: string | null;
   uf: string | null;

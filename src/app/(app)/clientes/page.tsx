@@ -3,7 +3,9 @@ import { Plus, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader, Card, EmptyState } from "@/components/ui/page-header";
 import { ButtonLink } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { formatCNPJ } from "@/lib/format";
+import { STATUS_CREDITO_COLORS, STATUS_CREDITO_LABELS } from "@/lib/cliente-status";
 
 export default async function ClientesPage({
   searchParams,
@@ -58,6 +60,7 @@ export default async function ClientesPage({
                   <th className="px-4 py-3 font-medium">CNPJ</th>
                   <th className="px-4 py-3 font-medium">Cidade/UF</th>
                   <th className="px-4 py-3 font-medium">Contato</th>
+                  <th className="px-4 py-3 font-medium">Crédito</th>
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
@@ -65,7 +68,9 @@ export default async function ClientesPage({
                 {clientes.map((c) => (
                   <tr
                     key={c.id}
-                    className="border-b border-border last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+                    className={`border-b border-border last:border-0 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] ${
+                      c.statusCredito !== "ATIVO" ? "border-l-4 border-l-danger" : ""
+                    }`}
                   >
                     <td className="px-4 py-3 font-medium">{c.nome}</td>
                     <td className="px-4 py-3">{formatCNPJ(c.cnpj)}</td>
@@ -73,6 +78,15 @@ export default async function ClientesPage({
                       {[c.cidade, c.uf].filter(Boolean).join("/") || "—"}
                     </td>
                     <td className="px-4 py-3">{c.contatoNome ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      {c.statusCredito === "ATIVO" ? (
+                        <span className="text-xs text-muted">—</span>
+                      ) : (
+                        <Badge color={STATUS_CREDITO_COLORS[c.statusCredito]}>
+                          {STATUS_CREDITO_LABELS[c.statusCredito]}
+                        </Badge>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/clientes/${c.id}`}

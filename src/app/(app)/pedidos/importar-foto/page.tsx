@@ -23,6 +23,7 @@ export default async function ImportarFotoPage() {
         clientes={clientes.map((c) => ({
           id: c.id,
           nome: c.nome,
+          statusCredito: c.statusCredito,
           cnpj: c.cnpj,
           cidade: c.cidade,
           uf: c.uf,

@@ -18,6 +18,7 @@ const createSchema = z.object({
   compradorNome: z.string().min(1, "Informe o comprador"),
   formaPagamentoId: z.string().min(1, "Selecione a forma de pagamento"),
   observacoes: z.string().optional().nullable(),
+  descontoPercentual: z.coerce.number().min(0, "Desconto inválido").max(100, "Desconto não pode passar de 100%").optional().default(0),
   itens: z.array(itemSchema).min(1, "Adicione ao menos um produto"),
 });
 
@@ -80,6 +81,12 @@ export async function POST(req: NextRequest) {
     if (!cliente) {
       return NextResponse.json({ error: "Cliente não encontrado" }, { status: 400 });
     }
+    if (cliente.statusCredito === "BLOQUEADO") {
+      return NextResponse.json(
+        { error: "Cliente bloqueado — não é possível lançar pedido para ele." },
+        { status: 400 },
+      );
+    }
     if (!industria) {
       return NextResponse.json({ error: "Indústria não encontrada" }, { status: 400 });
     }
@@ -131,7 +138,8 @@ export async function POST(req: NextRequest) {
 
     const pesoTotal = round2(itensData.reduce((acc, i) => acc + i.pesoTotal, 0));
     const quantidadeTotal = round2(itensData.reduce((acc, i) => acc + i.quantidade, 0));
-    const valorTotal = round2(itensData.reduce((acc, i) => acc + i.valorTotal, 0));
+    const valorBruto = round2(itensData.reduce((acc, i) => acc + i.valorTotal, 0));
+    const valorTotal = round2(valorBruto * (1 - body.descontoPercentual / 100));
 
     const dataPedido = new Date();
     const parcelas = calcularParcelas(
@@ -183,6 +191,7 @@ export async function POST(req: NextRequest) {
           },
           pesoTotal,
           quantidadeTotal,
+          descontoPercentual: body.descontoPercentual,
           valorTotal,
           criadoPorId: session!.user.id,
           itens: { create: itensData },

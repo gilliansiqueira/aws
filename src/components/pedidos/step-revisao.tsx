@@ -16,6 +16,9 @@ export function StepRevisao({
   compradorNome,
   observacoes,
   itens,
+  subtotal,
+  descontoPercentual,
+  valorTotal,
 }: {
   cliente: ClienteOption | undefined;
   industria: IndustriaOption | undefined;
@@ -24,9 +27,11 @@ export function StepRevisao({
   compradorNome: string;
   observacoes: string;
   itens: ItemWizard[];
+  subtotal: number;
+  descontoPercentual: number;
+  valorTotal: number;
 }) {
   const pesoTotal = itens.reduce((acc, i) => acc + i.pesoLiquidoUnit * i.quantidade, 0);
-  const valorTotal = itens.reduce((acc, i) => acc + i.valorUnitario * i.quantidade, 0);
 
   return (
     <div className="flex flex-col gap-4">
@@ -98,8 +103,24 @@ export function StepRevisao({
                 </td>
                 <td className="px-4 py-3">{formatNumberBR(pesoTotal, 3)}</td>
                 <td className="px-4 py-3" colSpan={2} />
-                <td className="px-4 py-3">{formatCurrencyBRL(valorTotal)}</td>
+                <td className="px-4 py-3">{formatCurrencyBRL(subtotal)}</td>
               </tr>
+              {descontoPercentual > 0 && (
+                <tr className="text-danger">
+                  <td className="px-4 py-2" colSpan={5}>
+                    Desconto ({descontoPercentual}%)
+                  </td>
+                  <td className="px-4 py-2">-{formatCurrencyBRL(subtotal - valorTotal)}</td>
+                </tr>
+              )}
+              {descontoPercentual > 0 && (
+                <tr className="border-t border-border text-base font-bold">
+                  <td className="px-4 py-3" colSpan={5}>
+                    Total com desconto
+                  </td>
+                  <td className="px-4 py-3">{formatCurrencyBRL(valorTotal)}</td>
+                </tr>
+              )}
             </tfoot>
           </table>
         </div>

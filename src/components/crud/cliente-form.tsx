@@ -7,12 +7,15 @@ import { Input, Label, Select } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { formatCEP, formatCNPJ, formatPhone, onlyDigits } from "@/lib/format";
 import { ESTADOS_BR } from "@/lib/estados-br";
+import { STATUS_CREDITO_LABELS, STATUS_CREDITO_ORDER } from "@/lib/cliente-status";
+import type { StatusCredito } from "@/generated/prisma/client";
 
 type FormaPagamento = { id: string; nome: string };
 
 export type ClienteFormData = {
   id?: string;
   nome: string;
+  statusCredito: StatusCredito;
   cnpj: string;
   endereco: string;
   bairro: string;
@@ -38,6 +41,7 @@ export function ClienteForm({
   const router = useRouter();
   const [form, setForm] = useState<ClienteFormData>({
     nome: initial?.nome ?? "",
+    statusCredito: initial?.statusCredito ?? "ATIVO",
     cnpj: initial?.cnpj ?? "",
     endereco: initial?.endereco ?? "",
     bairro: initial?.bairro ?? "",
@@ -119,6 +123,31 @@ export function ClienteForm({
               onChange={(e) => set("cnpj", e.target.value)}
               placeholder="00.000.000/0000-00"
             />
+          </div>
+          <div>
+            <Label required>Status de crédito</Label>
+            <Select
+              value={form.statusCredito}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, statusCredito: e.target.value as StatusCredito }))
+              }
+            >
+              {STATUS_CREDITO_ORDER.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_CREDITO_LABELS[s]}
+                </option>
+              ))}
+            </Select>
+            {form.statusCredito === "BLOQUEADO" && (
+              <p className="mt-1 text-xs text-danger">
+                Cliente bloqueado não consegue ter novos pedidos lançados.
+              </p>
+            )}
+            {form.statusCredito === "PROTESTADO" && (
+              <p className="mt-1 text-xs text-warning">
+                Aparece com alerta na listagem e no lançamento de pedido, mas não bloqueia.
+              </p>
+            )}
           </div>
           <div>
             <Label>Comprador padrão</Label>

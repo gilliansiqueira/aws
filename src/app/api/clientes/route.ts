@@ -5,6 +5,7 @@ import { errorResponse, requireSession } from "@/lib/api-utils";
 
 const schema = z.object({
   nome: z.string().min(1, "Informe o nome"),
+  statusCredito: z.enum(["ATIVO", "BLOQUEADO", "PROTESTADO"]).optional(),
   cnpj: z.string().optional().nullable(),
   endereco: z.string().optional().nullable(),
   bairro: z.string().optional().nullable(),

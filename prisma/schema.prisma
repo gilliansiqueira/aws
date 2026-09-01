@@ -164,9 +164,16 @@ model FormaPagamento {
   @@map("formas_pagamento")
 }
 
+enum StatusCredito {
+  ATIVO
+  BLOQUEADO
+  PROTESTADO
+}
+
 model Cliente {
-  id                     String   @id @default(cuid())
+  id                     String        @id @default(cuid())
   nome                   String
+  statusCredito          StatusCredito @default(ATIVO)
   cnpj                   String?
   endereco               String?
   bairro                 String?
@@ -295,6 +302,9 @@ model Pedido {
 
   pesoTotal   Decimal @db.Decimal(14, 3) @default(0)
   quantidadeTotal Decimal @db.Decimal(14, 3) @default(0)
+  // % aplicado sobre a soma dos itens — valorTotal já sai com o desconto
+  // descontado; os itens guardam o valor cheio (sem desconto) individualmente.
+  descontoPercentual Decimal @db.Decimal(5, 2) @default(0)
   valorTotal  Decimal @db.Decimal(14, 2) @default(0)
 
   enviadoWhatsappEm DateTime?

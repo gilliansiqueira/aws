@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { encontrarFaixaPreco } from "@/lib/pedido-calc";
+import { encontrarFaixaPreco, round2 } from "@/lib/pedido-calc";
 import { Stepper } from "./stepper";
 import { StepCliente } from "./step-cliente";
 import { StepProdutos } from "./step-produtos";
@@ -29,12 +29,17 @@ export function PedidoWizard({
   const [compradorNome, setCompradorNome] = useState(initial?.compradorNome ?? "");
   const [formaPagamentoId, setFormaPagamentoId] = useState(initial?.formaPagamentoId ?? "");
   const [observacoes, setObservacoes] = useState(initial?.observacoes ?? "");
+  const [descontoPercentual, setDescontoPercentual] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const valorTotal = useMemo(
+  const subtotal = useMemo(
     () => itens.reduce((acc, i) => acc + i.valorUnitario * i.quantidade, 0),
     [itens],
+  );
+  const valorTotal = useMemo(
+    () => round2(subtotal * (1 - descontoPercentual / 100)),
+    [subtotal, descontoPercentual],
   );
 
   function handleChangeCliente(id: string) {
@@ -131,6 +136,10 @@ export function PedidoWizard({
     if (current === 1) {
       if (!clienteId) return "Selecione o cliente.";
       if (!industriaId) return "Selecione a indústria.";
+      const cliente = catalogos.clientes.find((c) => c.id === clienteId);
+      if (cliente?.statusCredito === "BLOQUEADO") {
+        return "Este cliente está bloqueado — não é possível lançar pedido para ele.";
+      }
     }
     if (current === 2 || current === 3) {
       if (itens.length === 0) return "Adicione ao menos um produto.";
@@ -179,6 +188,7 @@ export function PedidoWizard({
         compradorNome,
         formaPagamentoId,
         observacoes: observacoes || null,
+        descontoPercentual,
         itens: itens.map((i) => ({
           produtoId: i.produtoId,
           quantidade: i.quantidade,
@@ -240,11 +250,14 @@ export function PedidoWizard({
           compradorNome={compradorNome}
           formaPagamentoId={formaPagamentoId}
           observacoes={observacoes}
+          subtotal={subtotal}
+          descontoPercentual={descontoPercentual}
           valorTotal={valorTotal}
           onChangeTransportadora={setTransportadoraId}
           onChangeComprador={setCompradorNome}
           onChangeFormaPagamento={setFormaPagamentoId}
           onChangeObservacoes={setObservacoes}
+          onChangeDesconto={setDescontoPercentual}
         />
       )}
 
@@ -257,6 +270,9 @@ export function PedidoWizard({
           compradorNome={compradorNome}
           observacoes={observacoes}
           itens={itens}
+          subtotal={subtotal}
+          descontoPercentual={descontoPercentual}
+          valorTotal={valorTotal}
         />
       )}
 

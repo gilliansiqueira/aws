@@ -29,6 +29,8 @@ export default async function DetalhePedidoPage({
   if (!pedido) notFound();
 
   const excluido = pedido.deletedAt !== null;
+  const subtotalItens = pedido.itens.reduce((acc, i) => acc + Number(i.valorTotal), 0);
+  const descontoPercentual = Number(pedido.descontoPercentual);
 
   return (
     <div>
@@ -148,8 +150,26 @@ export default async function DetalhePedidoPage({
                   <td className="px-4 py-3">{formatNumberBR(pedido.pesoTotal.toString(), 3)}</td>
                   <td className="px-4 py-3">{formatNumberBR(pedido.quantidadeTotal.toString(), 3)}</td>
                   <td className="px-4 py-3" />
-                  <td className="px-4 py-3">{formatCurrencyBRL(pedido.valorTotal.toString())}</td>
+                  <td className="px-4 py-3">{formatCurrencyBRL(subtotalItens)}</td>
                 </tr>
+                {descontoPercentual > 0 && (
+                  <tr className="text-danger">
+                    <td className="px-4 py-2" colSpan={6}>
+                      Desconto ({descontoPercentual}%)
+                    </td>
+                    <td className="px-4 py-2">
+                      -{formatCurrencyBRL(subtotalItens - Number(pedido.valorTotal))}
+                    </td>
+                  </tr>
+                )}
+                {descontoPercentual > 0 && (
+                  <tr className="border-t border-border text-base font-bold">
+                    <td className="px-4 py-3" colSpan={6}>
+                      Total com desconto
+                    </td>
+                    <td className="px-4 py-3">{formatCurrencyBRL(pedido.valorTotal.toString())}</td>
+                  </tr>
+                )}
               </tfoot>
             </table>
           </div>

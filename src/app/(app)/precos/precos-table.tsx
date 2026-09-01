@@ -4,6 +4,9 @@ import { useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { Card, EmptyState } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/field";
+import { ClientPagination } from "@/components/ui/client-pagination";
+
+const PAGE_SIZE = 30;
 
 type Item = {
   id: string;
@@ -23,12 +26,23 @@ export function PrecosTable({ items }: { items: Item[] }) {
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
 
   const filtered = items.filter(
     (i) =>
       i.nome.toLowerCase().includes(search.toLowerCase()) ||
       i.codigo.toLowerCase().includes(search.toLowerCase()),
   );
+
+  // Volta pra página 1 sempre que a busca muda o resultado — ajuste de
+  // estado durante o render (padrão do projeto), sem useEffect.
+  const [searchProcessada, setSearchProcessada] = useState(search);
+  if (search !== searchProcessada) {
+    setSearchProcessada(search);
+    setPage(1);
+  }
+
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   async function handleSave(id: string) {
     setSaving((s) => ({ ...s, [id]: true }));
@@ -75,7 +89,7 @@ export function PrecosTable({ items }: { items: Item[] }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((item) => {
+                {paged.map((item) => {
                   const changed = values[item.id] !== item.preco;
                   return (
                     <tr
@@ -145,6 +159,7 @@ export function PrecosTable({ items }: { items: Item[] }) {
             </table>
           </div>
         )}
+        <ClientPagination page={page} totalItems={filtered.length} pageSize={PAGE_SIZE} onPageChange={setPage} />
       </Card>
     </>
   );

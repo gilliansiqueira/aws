@@ -31,6 +31,7 @@ export default async function EditarClientePage({
         initial={{
           id: cliente.id,
           nome: cliente.nome,
+          statusCredito: cliente.statusCredito,
           cnpj: cliente.cnpj ?? "",
           endereco: cliente.endereco ?? "",
           bairro: cliente.bairro ?? "",
